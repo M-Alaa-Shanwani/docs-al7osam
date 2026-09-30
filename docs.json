@@ -41,5 +41,14 @@
     "added": "2026-09-30T16:20:57.922Z",
     "createdBy": "1111111111",
     "base": "storedProsedger"
+  },
+  {
+    "id": "backend/storedprosedger-1790786372529.html",
+    "name": "storedProsedger v2",
+    "cat": "backend",
+    "url": "docs/backend/storedprosedger-1790786372529.html",
+    "added": "2026-09-30T16:39:34.296Z",
+    "createdBy": "ELSHANWANI",
+    "base": "storedProsedger"
   }
 ]
