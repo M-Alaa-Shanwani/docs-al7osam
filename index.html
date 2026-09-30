@@ -641,33 +641,13 @@ function ghHeaders(withToken){
 }
 async function fetchManifest(){
   const s=ghSource();
-  // Always list real HTML files under docs/* — trust scan even when empty (deletes)
-  if(s.owner&&s.repo){
-    try{
-      const scanned=await scanRemoteDocs(s);
-      const tok=getToken();
-      if(tok)repairDocsJson(s,tok,scanned).catch(()=>{});
-      return scanned;
-    }catch(e){console.warn("scanRemoteDocs",e)}
-  }
-  // Fallback only when GitHub scan is unavailable
-  if(s.owner&&s.repo){
-    try{
-      const r=await fetch(rawUrl("docs.json",s),{cache:"no-store"});
-      if(r.ok){
-        const data=await r.json();
-        if(Array.isArray(data))return data;
-      }
-    }catch{}
-  }
-  try{
-    const r=await fetch(`docs.json?t=${Date.now()}`,{cache:"no-store"});
-    if(r.ok){
-      const data=await r.json();
-      if(Array.isArray(data))return data;
-    }
-  }catch{}
-  return[];
+  if(!s.owner||!s.repo)return[];
+  // Source of truth = HTML files that exist under docs/ on GitHub right now.
+  // Never read docs.json (it goes stale / cached).
+  const scanned=await scanRemoteDocs(s);
+  const tok=getToken();
+  if(tok)repairDocsJson(s,tok,scanned).catch(()=>{});
+  return scanned;
 }
 async function reloadRepoList(){
   const list=await fetchManifest();
@@ -679,67 +659,52 @@ async function reloadRepoList(){
   nav();tabsBar();main();
   return repo.length;
 }
+async function tipSha(s){
+  const url=`https://api.github.com/repos/${s.owner}/${s.repo}/commits/${encodeURIComponent(s.branch)}?per_page=1`;
+  const r=await fetch(url,{headers:{...ghHeaders(false),Accept:"application/vnd.github+json"},cache:"no-store"});
+  if(!r.ok)return s.branch;
+  const j=await r.json();
+  return j.sha||s.branch;
+}
 async function scanRemoteDocs(s){
-  // Public read: do NOT send a token (bad/expired PAT breaks public API with 401/403)
-  const cats=["backend","frontend","third-party"];
-  const out=[],seen={};
-  for(const cat of cats){
-    const api=`https://api.github.com/repos/${s.owner}/${s.repo}/contents/docs/${cat}?ref=${encodeURIComponent(s.branch)}`;
-    let r=await fetch(api,{headers:ghHeaders(false),cache:"no-store"});
-    if(!r.ok)continue;
-    const files=await r.json();
-    if(!Array.isArray(files))continue;
-    const htmls=files.filter(f=>f.type==="file"&&/\.html?$/i.test(f.name)).sort((a,b)=>a.name.localeCompare(b.name));
-    const metas=await Promise.all(htmls.map(async f=>{
-      let meta={};
-      try{
-        const url=`${f.download_url}${f.download_url.includes("?")?"&":"?"}t=${Date.now()}`;
-        const t=await fetch(url,{cache:"no-store"}).then(x=>x.text());
-        const m=t.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
-        if(m)meta=JSON.parse(m[1]);
-      }catch{}
-      return{f,meta};
-    }));
-    for(const{f,meta}of metas){
-      const base=String(meta.base||f.name.replace(/\.html?$/i,"").replace(/-\d{10,}$/,"").replace(/[-_]+/g," ")).trim();
-      const key=cat+"|"+base;
-      const n=seen[key]=(seen[key]??-1)+1;
-      const row={
-        id:`${cat}/${f.name}`,
-        name:n?`${base} v${n}`:base,
-        base,cat,
-        url:`docs/${cat}/${encodeURI(f.name)}`,
-        added:new Date().toISOString()
-      };
-      if(meta.createdBy)row.createdBy=String(meta.createdBy);
-      out.push(row);
-    }
-  }
-  // Tree API fallback if Contents returned nothing (e.g. nested paths)
-  if(!out.length){
-    const treeUrl=`https://api.github.com/repos/${s.owner}/${s.repo}/git/trees/${encodeURIComponent(s.branch)}?recursive=1`;
-    const r=await fetch(treeUrl,{headers:ghHeaders(false),cache:"no-store"});
-    if(r.ok){
-      const data=await r.json();
-      const files=(data.tree||[]).filter(x=>x.type==="blob"&&/^docs\/(backend|frontend|third-party)\/[^/]+\.html?$/i.test(x.path));
-      files.sort((a,b)=>a.path.localeCompare(b.path));
-      for(const f of files){
-        const parts=f.path.split("/");
-        const cat=parts[1],file=parts.slice(2).join("/");
-        let meta={};
-        try{
-          const t=await fetch(rawUrl(f.path,s),{cache:"no-store"}).then(x=>x.text());
-          const m=t.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
-          if(m)meta=JSON.parse(m[1]);
-        }catch{}
-        const base=String(meta.base||file.replace(/\.html?$/i,"").replace(/-\d{10,}$/,"").replace(/[-_]+/g," ")).trim();
-        const key=cat+"|"+base;
-        const n=seen[key]=(seen[key]??-1)+1;
-        const row={id:`${cat}/${file}`,name:n?`${base} v${n}`:base,base,cat,url:`docs/${cat}/${encodeURI(file)}`,added:new Date().toISOString()};
-        if(meta.createdBy)row.createdBy=String(meta.createdBy);
-        out.push(row);
-      }
-    }
+  // Always resolve to latest commit SHA so GitHub/API caches can't serve a stale tree
+  const sha=await tipSha(s);
+  const treeUrl=`https://api.github.com/repos/${s.owner}/${s.repo}/git/trees/${encodeURIComponent(sha)}?recursive=1`;
+  const r=await fetch(treeUrl,{headers:ghHeaders(false),cache:"no-store"});
+  if(!r.ok)throw new Error(`tree ${r.status}`);
+  const data=await r.json();
+  const files=(data.tree||[])
+    .filter(x=>x.type==="blob"&&/^docs\/(backend|frontend|third-party)\/[^/]+\.html?$/i.test(x.path))
+    .sort((a,b)=>a.path.localeCompare(b.path));
+  const seen={};
+  const metas=await Promise.all(files.map(async f=>{
+    let meta={};
+    try{
+      // raw + commit sha — not branch name — avoids CDN cache of deleted files
+      const url=`https://raw.githubusercontent.com/${s.owner}/${s.repo}/${sha}/${f.path}?t=${Date.now()}`;
+      const t=await fetch(url,{cache:"no-store"}).then(x=>x.text());
+      const m=t.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
+      if(m)meta=JSON.parse(m[1]);
+    }catch{}
+    return{f,meta};
+  }));
+  const out=[];
+  for(const{f,meta}of metas){
+    const parts=f.path.split("/");
+    const cat=parts[1],file=parts.slice(2).join("/");
+    const base=String(meta.base||file.replace(/\.html?$/i,"").replace(/-\d{10,}$/,"").replace(/[-_]+/g," ")).trim();
+    const key=cat+"|"+base;
+    const n=seen[key]=(seen[key]??-1)+1;
+    const row={
+      id:`${cat}/${file}`,
+      name:n?`${base} v${n}`:base,
+      base,cat,
+      url:`docs/${cat}/${encodeURI(file)}`,
+      added:new Date().toISOString(),
+      sha
+    };
+    if(meta.createdBy)row.createdBy=String(meta.createdBy);
+    out.push(row);
   }
   return out;
 }
@@ -761,14 +726,17 @@ async function repairDocsJson(target,token,list){
 async function loadDocHtml(d){
   if(d.html)return d.html;
   const s=ghSource();
+  // Prefer commit sha when we have it (no stale CDN), else branch + cache buster
   if(d.url&&s.owner&&s.repo){
+    const ref=d.sha||s.branch;
+    const path=String(d.url).replace(/^\//,"");
     try{
-      const r=await fetch(rawUrl(d.url,s),{cache:"no-store"});
+      const r=await fetch(`https://raw.githubusercontent.com/${s.owner}/${s.repo}/${ref}/${path}?t=${Date.now()}`,{cache:"no-store"});
       if(r.ok)return await r.text();
     }catch{}
   }
   if(d.url){
-    const r=await fetch(d.url,{cache:"no-store"});
+    const r=await fetch(`${d.url}${d.url.includes("?")?"&":"?"}t=${Date.now()}`,{cache:"no-store"});
     if(r.ok)return await r.text();
   }
   throw new Error("missing");
