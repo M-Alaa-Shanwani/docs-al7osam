@@ -535,9 +535,12 @@ function formTarget(){
 }
 function ghTarget(){
   const f=formTarget(),s=savedTarget(),d=detectTarget();
-  const owner=f.owner||PUBLISH.owner||s.owner||d.owner;
-  const repo=f.repo||PUBLISH.repo||s.repo||d.repo;
+  // Prefer canonical PUBLISH casing so raw CDN + API never hit a stale lowercase cache key
+  let owner=f.owner||PUBLISH.owner||s.owner||d.owner;
+  let repo=f.repo||PUBLISH.repo||s.repo||d.repo;
   const branch=f.branch||PUBLISH.branch||s.branch||d.branch||"main";
+  if(owner&&PUBLISH.owner&&owner.toLowerCase()===PUBLISH.owner.toLowerCase())owner=PUBLISH.owner;
+  if(repo&&PUBLISH.repo&&repo.toLowerCase()===PUBLISH.repo.toLowerCase())repo=PUBLISH.repo;
   if(owner&&repo)return{owner,repo,branch};
   return null;
 }
@@ -614,17 +617,22 @@ async function tryUnlock(pw){
 }
 
 function ghSource(){
-  const s=savedTarget();
+  // Always use canonical PUBLISH casing. raw.githubusercontent.com caches
+  // lowercase/uppercase owners as DIFFERENT URLs (stale forever).
   return{
-    owner:PUBLISH.owner||s.owner||"",
-    repo:PUBLISH.repo||s.repo||"",
-    branch:PUBLISH.branch||s.branch||"main"
+    owner:PUBLISH.owner,
+    repo:PUBLISH.repo,
+    branch:PUBLISH.branch||"main"
   };
 }
 function rawUrl(path,src){
   const s=src||ghSource();
   if(!s.owner||!s.repo||!path)return path;
-  return `https://raw.githubusercontent.com/${s.owner}/${s.repo}/${s.branch}/${String(path).replace(/^\//,"")}?t=${Date.now()}`;
+  // Prefer API blob URLs? Keep raw but ALWAYS canonical owner from PUBLISH
+  const owner=PUBLISH.owner;
+  const repo=PUBLISH.repo;
+  const branch=s.branch||PUBLISH.branch||"main";
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${String(path).replace(/^\//,"")}?t=${Date.now()}`;
 }
 function fromB64(content){
   const bin=atob(String(content||"").replace(/\n/g,""));
