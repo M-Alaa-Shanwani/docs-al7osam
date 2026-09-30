@@ -945,48 +945,6 @@ async function ensureSiteFiles(target,token,list){
     const app=await fetch(`index.html?t=${Date.now()}`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("index");return r.text()});
     await putIfChanged({target,token,path:"index.html",content:app,message:"docs: sync hub app (list from docs/)"});
   }catch{}
-  try{
-    const wf=`name: Deploy Docs Hub
-on:
-  push:
-    branches: [main]
-  workflow_dispatch: {}
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-concurrency:
-  group: pages
-  cancel-in-progress: true
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: \${{ steps.d.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: node scripts/build-manifest.mjs
-      - run: touch .nojekyll
-      - name: Commit repaired docs.json
-        run: |
-          git config user.name "docs-hub-bot"
-          git config user.email "docs-hub-bot@users.noreply.github.com"
-          git add docs.json .nojekyll
-          if git diff --cached --quiet; then echo unchanged; else git commit -m "docs: rebuild manifest from docs/ folder" && git push; fi
-      - uses: actions/configure-pages@v5
-        continue-on-error: true
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: . }
-        continue-on-error: true
-      - id: d
-        uses: actions/deploy-pages@v4
-        continue-on-error: true
-`;
-    await putIfChanged({target,token,path:".github/workflows/pages.yml",content:wf,message:"docs: add Pages workflow to rebuild from docs/"});
-  }catch{}
 }
 
 async function publishToGitHub({html,base,name,cat,createdBy,token}){

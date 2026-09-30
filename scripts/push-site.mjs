@@ -89,9 +89,6 @@ console.log(`docs.json: ${list.length} docs`);
 await putFile("docs.json", json, "docs: rebuild manifest from docs/ folder");
 await putFile(".nojekyll", "", "docs: disable Jekyll for Pages");
 await putFile("index.html", fs.readFileSync("index.html", "utf8"), "docs: sync hub app (list from docs/)");
-if (fs.existsSync(".github/workflows/pages.yml")) {
-  await putFile(".github/workflows/pages.yml", fs.readFileSync(".github/workflows/pages.yml", "utf8"), "docs: Pages workflow rebuilds from docs/");
-}
 if (fs.existsSync("scripts/build-manifest.mjs")) {
   await putFile("scripts/build-manifest.mjs", fs.readFileSync("scripts/build-manifest.mjs", "utf8"), "docs: update build-manifest");
 }
