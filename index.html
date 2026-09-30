@@ -621,35 +621,53 @@ function fromB64(content){
   const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
   return new TextDecoder().decode(bytes);
 }
+function ghHeaders(withToken){
+  const h={Accept:"application/vnd.github+json"};
+  if(withToken!==false){
+    const tok=getToken();
+    if(tok)h.Authorization=`Bearer ${tok}`;
+  }
+  return h;
+}
 async function fetchManifest(){
   const s=ghSource();
-  // 1) Prefer live scan of repo files (works even if docs.json is stale)
+  // Always list real HTML files under docs/* (never trust stale docs.json first)
   if(s.owner&&s.repo){
     try{
       const scanned=await scanRemoteDocs(s);
-      if(scanned.length)return scanned;
+      if(scanned.length){
+        const tok=getToken();
+        if(tok)repairDocsJson(s,tok,scanned).catch(()=>{});
+        return scanned;
+      }
     }catch(e){console.warn("scanRemoteDocs",e)}
   }
-  // 2) Fallback: docs.json from raw / local
-  const urls=[];
-  if(s.owner&&s.repo)urls.push(rawUrl("docs.json",s));
-  urls.push(`docs.json?t=${Date.now()}`);
-  for(const u of urls){
-    try{
-      const r=await fetch(u,{cache:"no-store"});
-      if(!r.ok)continue;
+  // Fallback only when GitHub scan is empty/unavailable
+  try{
+    const r=await fetch(`docs.json?t=${Date.now()}`,{cache:"no-store"});
+    if(r.ok){
       const data=await r.json();
       if(Array.isArray(data)&&data.length)return data;
+    }
+  }catch{}
+  if(s.owner&&s.repo){
+    try{
+      const r=await fetch(rawUrl("docs.json",s),{cache:"no-store"});
+      if(r.ok){
+        const data=await r.json();
+        if(Array.isArray(data))return data;
+      }
     }catch{}
   }
   return[];
 }
 async function scanRemoteDocs(s){
+  // Public read: do NOT send a token (bad/expired PAT breaks public API with 401/403)
   const cats=["backend","frontend","third-party"];
   const out=[],seen={};
   for(const cat of cats){
     const api=`https://api.github.com/repos/${s.owner}/${s.repo}/contents/docs/${cat}?ref=${encodeURIComponent(s.branch)}`;
-    const r=await fetch(api,{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});
+    let r=await fetch(api,{headers:ghHeaders(false),cache:"no-store"});
     if(!r.ok)continue;
     const files=await r.json();
     if(!Array.isArray(files))continue;
@@ -657,7 +675,8 @@ async function scanRemoteDocs(s){
     const metas=await Promise.all(htmls.map(async f=>{
       let meta={};
       try{
-        const t=await fetch(`${f.download_url}${f.download_url.includes("?")?"&":"?"}t=${Date.now()}`,{cache:"no-store"}).then(x=>x.text());
+        const url=`${f.download_url}${f.download_url.includes("?")?"&":"?"}t=${Date.now()}`;
+        const t=await fetch(url,{cache:"no-store"}).then(x=>x.text());
         const m=t.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
         if(m)meta=JSON.parse(m[1]);
       }catch{}
@@ -667,12 +686,59 @@ async function scanRemoteDocs(s){
       const base=String(meta.base||f.name.replace(/\.html?$/i,"").replace(/-\d{10,}$/,"").replace(/[-_]+/g," ")).trim();
       const key=cat+"|"+base;
       const n=seen[key]=(seen[key]??-1)+1;
-      const row={id:`${cat}/${f.name}`,name:n?`${base} v${n}`:base,base,cat,url:`docs/${cat}/${encodeURI(f.name)}`,added:new Date().toISOString()};
+      const row={
+        id:`${cat}/${f.name}`,
+        name:n?`${base} v${n}`:base,
+        base,cat,
+        url:`docs/${cat}/${encodeURI(f.name)}`,
+        added:new Date().toISOString()
+      };
       if(meta.createdBy)row.createdBy=String(meta.createdBy);
       out.push(row);
     }
   }
+  // Tree API fallback if Contents returned nothing (e.g. nested paths)
+  if(!out.length){
+    const treeUrl=`https://api.github.com/repos/${s.owner}/${s.repo}/git/trees/${encodeURIComponent(s.branch)}?recursive=1`;
+    const r=await fetch(treeUrl,{headers:ghHeaders(false),cache:"no-store"});
+    if(r.ok){
+      const data=await r.json();
+      const files=(data.tree||[]).filter(x=>x.type==="blob"&&/^docs\/(backend|frontend|third-party)\/[^/]+\.html?$/i.test(x.path));
+      files.sort((a,b)=>a.path.localeCompare(b.path));
+      for(const f of files){
+        const parts=f.path.split("/");
+        const cat=parts[1],file=parts.slice(2).join("/");
+        let meta={};
+        try{
+          const t=await fetch(rawUrl(f.path,s),{cache:"no-store"}).then(x=>x.text());
+          const m=t.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
+          if(m)meta=JSON.parse(m[1]);
+        }catch{}
+        const base=String(meta.base||file.replace(/\.html?$/i,"").replace(/-\d{10,}$/,"").replace(/[-_]+/g," ")).trim();
+        const key=cat+"|"+base;
+        const n=seen[key]=(seen[key]??-1)+1;
+        const row={id:`${cat}/${file}`,name:n?`${base} v${n}`:base,base,cat,url:`docs/${cat}/${encodeURI(file)}`,added:new Date().toISOString()};
+        if(meta.createdBy)row.createdBy=String(meta.createdBy);
+        out.push(row);
+      }
+    }
+  }
   return out;
+}
+async function repairDocsJson(target,token,list){
+  const current=await getGitHubFile({target,token,path:"docs.json"});
+  let prev=[];
+  try{if(current?.content)prev=JSON.parse(fromB64(current.content))}catch{}
+  const prevIds=(Array.isArray(prev)?prev:[]).map(d=>d.id).sort().join("|");
+  const nextIds=list.map(d=>d.id).sort().join("|");
+  if(prevIds===nextIds&&(Array.isArray(prev)?prev:[]).length===list.length)return;
+  const clean=list.map(({id,name,cat,url,added,createdBy,base})=>({id,name,cat,url,added,...(createdBy?{createdBy}:{}),...(base?{base}:{})}));
+  await putGitHubFile({
+    target,token,path:"docs.json",
+    content:JSON.stringify(clean,null,2)+"\n",
+    message:"docs: auto-repair manifest from docs/ folder",
+    sha:current?.sha
+  });
 }
 async function loadDocHtml(d){
   if(d.html)return d.html;
@@ -857,6 +923,72 @@ async function updateDocsJson(target,token,entry){
   return list;
 }
 
+async function putIfChanged({target,token,path,content,message}){
+  const cur=await getGitHubFile({target,token,path});
+  if(cur?.content){
+    try{if(fromB64(cur.content)===content)return false}catch{}
+  }
+  await putGitHubFile({target,token,path,content,message,sha:cur?.sha});
+  return true;
+}
+
+/** Push hub app + repaired docs.json so GitHub Pages actually lists docs/ */
+async function ensureSiteFiles(target,token,list){
+  const clean=(list||[]).map(({id,name,cat,url,added,createdBy,base})=>({id,name,cat,url,added,...(createdBy?{createdBy}:{}),...(base?{base}:{})}));
+  await putIfChanged({
+    target,token,path:"docs.json",
+    content:JSON.stringify(clean,null,2)+"\n",
+    message:"docs: rebuild manifest from docs/ folder"
+  });
+  await putIfChanged({target,token,path:".nojekyll",content:"",message:"docs: disable Jekyll for Pages"});
+  try{
+    const app=await fetch(`index.html?t=${Date.now()}`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("index");return r.text()});
+    await putIfChanged({target,token,path:"index.html",content:app,message:"docs: sync hub app (list from docs/)"});
+  }catch{}
+  try{
+    const wf=`name: Deploy Docs Hub
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.d.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/build-manifest.mjs
+      - run: touch .nojekyll
+      - name: Commit repaired docs.json
+        run: |
+          git config user.name "docs-hub-bot"
+          git config user.email "docs-hub-bot@users.noreply.github.com"
+          git add docs.json .nojekyll
+          if git diff --cached --quiet; then echo unchanged; else git commit -m "docs: rebuild manifest from docs/ folder" && git push; fi
+      - uses: actions/configure-pages@v5
+        continue-on-error: true
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: . }
+        continue-on-error: true
+      - id: d
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+`;
+    await putIfChanged({target,token,path:".github/workflows/pages.yml",content:wf,message:"docs: add Pages workflow to rebuild from docs/"});
+  }catch{}
+}
+
 async function publishToGitHub({html,base,name,cat,createdBy,token}){
   const target=ghTarget();
   if(!target)throw Object.assign(new Error("repo"),{code:"repo"});
@@ -874,8 +1006,16 @@ async function publishToGitHub({html,base,name,cat,createdBy,token}){
   }
   await putGitHubFile({target,token,path,content:body,message:`docs: add ${name} (by ${createdBy})`});
   const entry={id:`${cat}/${file}`,name,cat,url:`docs/${cat}/${encodeURI(file)}`,added:new Date().toISOString(),createdBy,base};
-  await updateDocsJson(target,token,entry);
-  return{path,file,url:entry.url,target,entry};
+  // Full rebuild from docs/* so shared list never drifts from the folder
+  let list=[];
+  try{
+    list=await scanRemoteDocs(target);
+    if(!list.find(d=>d.id===entry.id))list.push(entry);
+  }catch{
+    try{list=await updateDocsJson(target,token,entry)}catch{list=[entry]}
+  }
+  await ensureSiteFiles(target,token,list);
+  return{path,file,url:entry.url,target,entry,list};
 }
 
 async function saveLocal({html,base,cat,createdBy,name,extra={}}){
@@ -1001,22 +1141,8 @@ $("#syncBtn").onclick=async()=>{
   $("#syncBtn").disabled=true;toast(t("syncing"));
   try{
     saveTarget(target);setToken(token);
-    // Rebuild list from actual files on GitHub
     const list=await scanRemoteDocs(target);
-    await putGitHubFile({
-      target,token,path:"docs.json",
-      content:JSON.stringify(list,null,2)+"\n",
-      message:"docs: sync manifest for all devices",
-      sha:(await getGitHubFile({target,token,path:"docs.json"}))?.sha
-    });
-    // Push current app so other devices get the listing fix
-    const app=await fetch(`index.html?t=${Date.now()}`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("index.html");return r.text()});
-    await putGitHubFile({
-      target,token,path:"index.html",
-      content:app,
-      message:"docs: sync hub app",
-      sha:(await getGitHubFile({target,token,path:"index.html"}))?.sha
-    });
+    await ensureSiteFiles(target,token,list);
     repo=list.map(d=>({...d,base:d.base||d.name.replace(/ v\d+$/,"")}));
     const remoteIds=new Set(repo.map(d=>d.id));
     local=local.filter(d=>!remoteIds.has(d.id));
