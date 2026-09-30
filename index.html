@@ -272,6 +272,7 @@ body.locked #gate{display:grid}
   <div class="sw"><input id="q" type="search" placeholder="Filter by name…" aria-label="Filter docs" autocomplete="off"><kbd>/</kbd></div>
   <nav id="nav"></nav>
   <button class="up" id="upBtn">+ Upload doc</button>
+  <button class="out" id="syncBtn" type="button">Sync to all devices</button>
   <button class="out" id="logout" type="button">Lock</button>
   <div class="by" id="builtBy">Built by <b>dev-al7osam</b></div>
 </aside>
@@ -347,6 +348,11 @@ en:{
   tokHelpHtml:`How to create the token:<br>1) GitHub → Settings → Developer settings → Personal access tokens<br>2) <b>Fine-grained</b>: Resource owner = your user, Repository access = <b>Only select</b> this repo, Permissions → <b>Contents: Read and write</b><br>3) Or <b>Classic</b> token with scope <code>repo</code><br>4) Paste the new token here (old ones without Contents write will fail)`,
   publishPerm:"Token is valid but missing Contents: Read and write on this repo. Create a new token with that permission (see steps under the field).",
   testTok:"Test access",testOk:(o,r)=>`OK — access to ${o}/${r}`,testFail:s=>`Token/repo check failed: ${s}`,
+  syncBtn:"Sync to all devices",
+  syncing:"Syncing list + app to GitHub…",
+  syncOk:n=>`Synced ${n} docs. Refresh on other devices.`,
+  syncNeedTok:"Save a GitHub token first (open Upload doc).",
+  syncFail:s=>`Sync failed: ${s}`,
   download:"Download",delete:"Delete",
   dlStart:"Download started",dlFail:"Download failed",
   delConfirm:"Delete this doc from this browser?",deleted:"Deleted",
@@ -394,6 +400,11 @@ ar:{
   tokHelpHtml:`طريقة عمل التوكن:<br>1) GitHub → Settings → Developer settings → Personal access tokens<br>2) <b>Fine-grained</b>: Resource owner = حسابك، Repository access = <b>Only select</b> الريبو ده، Permissions → <b>Contents: Read and write</b><br>3) أو <b>Classic</b> وعليه صلاحية <code>repo</code><br>4) الصق التوكن الجديد هنا (القديم من غير Contents write هيفشل)`,
   publishPerm:"التوكن شغال بس ناقصه Contents: Read and write على الريبو ده. اعمل توكن جديد بالصلاحية دي (الخطوات تحت الحقل).",
   testTok:"اختبار الوصول",testOk:(o,r)=>`تمام — فيه وصول لـ ${o}/${r}`,testFail:s=>`فشل فحص التوكن/الريبو: ${s}`,
+  syncBtn:"مزامنة لكل الأجهزة",
+  syncing:"جارٍ مزامنة القائمة والتطبيق على GitHub…",
+  syncOk:n=>`تمت مزامنة ${n} مستند. حدّث الصفحة على الأجهزة التانية.`,
+  syncNeedTok:"احفظ توكن GitHub أولاً (من رفع مستند).",
+  syncFail:s=>`فشلت المزامنة: ${s}`,
   download:"تحميل",delete:"حذف",
   dlStart:"بدأ التحميل",dlFail:"فشل التحميل",
   delConfirm:"حذف هذا المستند من هذا المتصفح؟",deleted:"تم الحذف",
@@ -407,7 +418,7 @@ ar:{
    Change password: node scripts/hash-password.mjs "YourNewPassword" then paste salt/hash below. */
 const AUTH={salt:"6064397b433e18ceea8fb81b405cec93",hash:"06fa93576df7d820d51e1c0d84b6c3323d39bcceee68c6e5c7a7f1f22decd3e2",iters:120000};
 /* Defaults for cross-device sync (raw GitHub + Pages) */
-const PUBLISH={owner:"m-alaa-shanwani",repo:"docs-al7osam",branch:"main"};
+const PUBLISH={owner:"M-Alaa-Shanwani",repo:"docs-al7osam",branch:"main"};
 const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1",TKEY="docs-hub-gh-token",GKEY="docs-hub-gh-target";
 let pendingUpload=null;
 const t=k=>{const v=I18N[lang][k];return typeof v==="function"?v:v};
@@ -463,6 +474,7 @@ function applyChrome(){
   $("#q").placeholder=t("filter");
   $("#q").setAttribute("aria-label",t("filterAria"));
   $("#upBtn").textContent=t("upload");
+  $("#syncBtn").textContent=t("syncBtn");
   $("#logout").textContent=t("logout");
   $("#burger").setAttribute("aria-label",t("menu"));
   document.querySelectorAll("[data-lang]").forEach(b=>b.classList.toggle("on",b.dataset.lang===lang));
@@ -611,6 +623,14 @@ function fromB64(content){
 }
 async function fetchManifest(){
   const s=ghSource();
+  // 1) Prefer live scan of repo files (works even if docs.json is stale)
+  if(s.owner&&s.repo){
+    try{
+      const scanned=await scanRemoteDocs(s);
+      if(scanned.length)return scanned;
+    }catch(e){console.warn("scanRemoteDocs",e)}
+  }
+  // 2) Fallback: docs.json from raw / local
   const urls=[];
   if(s.owner&&s.repo)urls.push(rawUrl("docs.json",s));
   urls.push(`docs.json?t=${Date.now()}`);
@@ -619,10 +639,40 @@ async function fetchManifest(){
       const r=await fetch(u,{cache:"no-store"});
       if(!r.ok)continue;
       const data=await r.json();
-      if(Array.isArray(data))return data;
+      if(Array.isArray(data)&&data.length)return data;
     }catch{}
   }
   return[];
+}
+async function scanRemoteDocs(s){
+  const cats=["backend","frontend","third-party"];
+  const out=[],seen={};
+  for(const cat of cats){
+    const api=`https://api.github.com/repos/${s.owner}/${s.repo}/contents/docs/${cat}?ref=${encodeURIComponent(s.branch)}`;
+    const r=await fetch(api,{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});
+    if(!r.ok)continue;
+    const files=await r.json();
+    if(!Array.isArray(files))continue;
+    const htmls=files.filter(f=>f.type==="file"&&/\.html?$/i.test(f.name)).sort((a,b)=>a.name.localeCompare(b.name));
+    const metas=await Promise.all(htmls.map(async f=>{
+      let meta={};
+      try{
+        const t=await fetch(`${f.download_url}${f.download_url.includes("?")?"&":"?"}t=${Date.now()}`,{cache:"no-store"}).then(x=>x.text());
+        const m=t.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
+        if(m)meta=JSON.parse(m[1]);
+      }catch{}
+      return{f,meta};
+    }));
+    for(const{f,meta}of metas){
+      const base=String(meta.base||f.name.replace(/\.html?$/i,"").replace(/-\d{10,}$/,"").replace(/[-_]+/g," ")).trim();
+      const key=cat+"|"+base;
+      const n=seen[key]=(seen[key]??-1)+1;
+      const row={id:`${cat}/${f.name}`,name:n?`${base} v${n}`:base,base,cat,url:`docs/${cat}/${encodeURI(f.name)}`,added:new Date().toISOString()};
+      if(meta.createdBy)row.createdBy=String(meta.createdBy);
+      out.push(row);
+    }
+  }
+  return out;
 }
 async function loadDocHtml(d){
   if(d.html)return d.html;
@@ -943,6 +993,38 @@ $("#gateForm").onsubmit=async e=>{
   if(ok)enterApp();
 };
 $("#logout").onclick=()=>lockApp();
+$("#syncBtn").onclick=async()=>{
+  const token=getToken()||($("#tok")&&$("#tok").value.trim());
+  if(!token){toast(t("syncNeedTok"),1);$("#upBtn").click();return}
+  const target=ghTarget()||ghSource();
+  if(!target.owner||!target.repo){toast(t("needRepo"),1);return}
+  $("#syncBtn").disabled=true;toast(t("syncing"));
+  try{
+    saveTarget(target);setToken(token);
+    // Rebuild list from actual files on GitHub
+    const list=await scanRemoteDocs(target);
+    await putGitHubFile({
+      target,token,path:"docs.json",
+      content:JSON.stringify(list,null,2)+"\n",
+      message:"docs: sync manifest for all devices",
+      sha:(await getGitHubFile({target,token,path:"docs.json"}))?.sha
+    });
+    // Push current app so other devices get the listing fix
+    const app=await fetch(`index.html?t=${Date.now()}`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("index.html");return r.text()});
+    await putGitHubFile({
+      target,token,path:"index.html",
+      content:app,
+      message:"docs: sync hub app",
+      sha:(await getGitHubFile({target,token,path:"index.html"}))?.sha
+    });
+    repo=list.map(d=>({...d,base:d.base||d.name.replace(/ v\d+$/,"")}));
+    const remoteIds=new Set(repo.map(d=>d.id));
+    local=local.filter(d=>!remoteIds.has(d.id));
+    nav();tabsBar();if(cur==="home")home();
+    toast(t("syncOk")(list.length));
+  }catch(e){toast(t("syncFail")(String(e.message||e)),1)}
+  finally{$("#syncBtn").disabled=false}
+};
 applyChrome();
 if(isUnlocked())enterApp();
 else{$("#pw").focus()}
