@@ -1173,12 +1173,17 @@ $("#syncBtn").onclick=async()=>{
   }catch(e){toast(t("syncFail")(String(e.message||e)),1)}
   finally{$("#syncBtn").disabled=false}
 };
+let _lastReload=0;
+async function softReloadRepo(){
+  if(!isUnlocked()||!ready)return;
+  if(Date.now()-_lastReload<15000)return;
+  _lastReload=Date.now();
+  try{await reloadRepoList()}catch{}
+}
 document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible"&&isUnlocked()&&ready)reloadRepoList().catch(()=>{});
+  if(document.visibilityState==="visible")softReloadRepo();
 });
-window.addEventListener("focus",()=>{
-  if(isUnlocked()&&ready)reloadRepoList().catch(()=>{});
-});
+window.addEventListener("focus",()=>softReloadRepo());
 applyChrome();
 if(isUnlocked())enterApp();
 else{$("#pw").focus()}
