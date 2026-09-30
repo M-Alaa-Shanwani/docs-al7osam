@@ -1,0 +1,285 @@
+<!-- docs-hub {"base":"dddaavvvvvvvvvvvvvv","createdBy":"aaaavvvv"} -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل نقل التحويلات الهيكلية للبيانات أثناء الـ Migrations في EF Core</title>
+    <style>
+        :root {
+            --primary-color: #059669;
+            --primary-dark: #047857;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --border-color: #e2e8f0;
+            --code-bg: #1e293b;
+            --code-text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin: 0 0 10px 0;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #d1fae5;
+            color: #065f46;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            margin-bottom: 12px;
+        }
+
+        h2 {
+            color: var(--text-color);
+            font-size: 19px;
+            border-right: 4px solid var(--primary-color);
+            padding-right: 12px;
+            margin-top: 35px;
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            font-size: 16px;
+            color: var(--primary-dark);
+            margin-top: 20px;
+        }
+
+        p, li {
+            color: #334155;
+            font-size: 15px;
+        }
+
+        ol, ul {
+            padding-right: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .callout {
+            background-color: #ecfdf5;
+            border-right: 4px solid var(--primary-color);
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .callout-title {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 13.5px;
+            line-height: 1.5;
+            margin: 15px 0;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+            direction: ltr;
+            display: inline-block;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .footer {
+            margin-top: 50px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        @media print {
+            body {
+                background-color: #ffffff;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <span class="badge">EF Core & ABP.io Best Practices</span>
+        <h1>دليل تحويل البيانات بأمان باستخدام ملفات SQL خارجية داخل الـ Migrations</h1>
+        <p>فصل كود استعلامات التحويل عن كود C# للحفاظ على نظافة المشروع وسلامة البيانات (Clean Migrations Pattern)</p>
+    </div>
+
+    <h2>1. الهدف والداعي الأمني (Why This Approach?)</h2>
+    <p>
+        عند إعادة بناء بعض الجداول (Data Refactoring) مثل الدمج بين أعمدة أو تفكيكها، يتعرف محرك EF Core على التعديل كأمر حذف <code>DropColumn</code> ثم إنشاء <code>AddColumn</code>، مما يؤدي لمسح البيانات الحالية.
+    </p>
+    <p>
+        تتيح هذه الطريقة تنفيذ سكريبت SQL لنقل البيانات **داخل نفس الـ Transaction** الخاصة بالـ Migration، مع فصل كود الـ SQL المعقد في ملفات منفصلة لحماية كود C# من التلوث بالاستعلامات النصية الطويلة.
+    </p>
+
+    <div class="callout">
+        <div class="callout-title">مميزات هذا الأسلوب:</div>
+        <ul>
+            <li><strong>تنفيذ ذري (Atomic Execution):</strong> إما أن تنجح المايجريشن ونقل البيانات معاً، أو يتم عمل Rollback لكل شيء.</li>
+            <li><strong>Clean Git History:</strong> الاستعلامات موجودة في ملفات <code>.sql</code> مستقلة يسهل تتبعها وتعديلها.</li>
+            <li><strong>نظافة الكود (Clean Code):</strong> يظل ملف الـ C# Migration صريحاً ونظيفاً وخالياً من الـ Text Blocks المزعجة.</li>
+        </ul>
+    </div>
+
+    <h2>2. الترتيب الهيكلي للمجلد والملفات</h2>
+    <p>قم بإنشاء مجلد باسم <code>Scripts</code> داخل مجلد <code>Migrations</code> في مشروع <code>*.EntityFrameworkCore</code>:</p>
+
+    <pre>MyProject.EntityFrameworkCore/
+ └── Migrations/
+      ├── Scripts/
+      │    ├── 20260929_MigrateCustomerName_Up.sql
+      │    └── 20260929_MigrateCustomerName_Down.sql
+      └── 20260929120000_RefactorCustomerColumns.cs</pre>
+
+    <h2>3. خطوات التطبيق المتبعة</h2>
+
+    <h3>الخطوة 1: ضبط مشروع `.csproj` لنسخ الملفات تلقائياً</h3>
+    <p>افتح ملف المشروع <code>YourProjectName.EntityFrameworkCore.csproj</code> وأضف هذا التوجيه لضمان نسخ سكريبتات الـ SQL إلى مجلد التشغيل (Output Directory) عند عمل Build:</p>
+
+    <pre><code>&lt;ItemGroup&gt;
+  &lt;None Update="Migrations\Scripts\**\*.sql"&gt;
+    &lt;CopyToOutputDirectory&gt;PreserveNewest&lt;/CopyToOutputDirectory&gt;
+  &lt;/None&gt;
+&lt;/ItemGroup&gt;</code></pre>
+
+    <h3>الخطوة 2: كتابة سكريبت تحويل البيانات في ملف الـ SQL</h3>
+    <p>في الملف <code>Migrations/Scripts/20260929_MigrateCustomerName_Up.sql</code> ضع كود الـ SQL الخالص الذي يحول البيانات للعمود الجديد:</p>
+
+    <pre><code>-- نقل البيانات من الأعمدة القديمة (First/Last) إلى العمود الجديد (FullName)
+UPDATE Customers
+SET FullName = ISNULL(FirstName, '') + ' ' + ISNULL(LastName, '')
+WHERE FullName IS NULL AND (FirstName IS NOT NULL OR LastName IS NOT NULL);</code></pre>
+
+    <h3>الخطوة 3: تضمين الملف داخل ملف الـ Migration بـ C#</h3>
+    <p>افتح ملف الـ Migration المُولّد وعدّل دالتي <code>Up</code> و <code>Down</code> لاستدعاء سكريبتات הـ SQL في اللحظة المناسبة بين إنشاء العمود وحذفه:</p>
+
+    <pre><code>using System;
+using System.IO;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+namespace YourProjectName.Migrations;
+
+public partial class RefactorCustomerColumns : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        // 1. إنشاء العمود الجديد أولاً (يجب أن يكون Nullable مؤقتاً لتجنب خطأ السجلات القديمة)
+        migrationBuilder.AddColumn&lt;string&gt;(
+            name: "FullName",
+            table: "Customers",
+            type: "nvarchar(200)",
+            nullable: true);
+
+        // 2. قراءة وتنفيذ سكريبت SQL الخارجي لنقل البيانات
+        var scriptPath = Path.Combine(AppContext.BaseDirectory, "Migrations", "Scripts", "20260929_MigrateCustomerName_Up.sql");
+        var sqlScript = File.ReadAllText(scriptPath);
+        migrationBuilder.Sql(sqlScript);
+
+        // 3. حذف الأعمدة القديمة بصفة نهائية بعد تحويل بياناتها
+        migrationBuilder.DropColumn(name: "FirstName", table: "Customers");
+        migrationBuilder.DropColumn(name: "LastName", table: "Customers");
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        // الاسترجاع (Rollback): إعادة إضافة الأعمدة القديمة
+        migrationBuilder.AddColumn&lt;string&gt;(name: "FirstName", table: "Customers", nullable: true);
+        migrationBuilder.AddColumn&lt;string&gt;(name: "LastName", table: "Customers", nullable: true);
+
+        // تشغيل سكريبت الاسترجاع في حالة الـ Down
+        var scriptPath = Path.Combine(AppContext.BaseDirectory, "Migrations", "Scripts", "20260929_MigrateCustomerName_Down.sql");
+        if (File.Exists(scriptPath))
+        {
+            migrationBuilder.Sql(File.ReadAllText(scriptPath));
+        }
+
+        // حذف العمود الجديد
+        migrationBuilder.DropColumn(name: "FullName", table: "Customers");
+    }
+}</code></pre>
+
+    <h2>4. القواعد الذهبية لسلامة العملية</h2>
+    <ol>
+        <li><strong>Nullability المؤقتة:</strong> اجعل الأعمدة الجديدة المقيدة بـ <code>NOT NULL</code> قابلة لـ <code>Nullable</code> في البداية لتسمح لـ EF Core بإنشائها أولاً، ثم قم بنقل البيانات، وبعدها يمكنك تغييرها إلى <code>Nullable: false</code> إذا تطلب الأمر.</li>
+        <li><strong>مراعاة مسار التشغيل:</strong> دائماً استخدم <code>AppContext.BaseDirectory</code> للوصول إلى المسار الفعلي بمرونة أثناء عمل <code>DbMigrator</code> أو <code>dotnet ef database update</code>.</li>
+        <li><strong>التوافقية مع CI/CD:</strong> تعمل هذه السكريبتات تلقائياً عبر سطر الأوامر أو أداة <code>DbMigrator</code> الخاصة بـ ABP دون أي تدخل يدوي على قاعدة البيانات.</li>
+    </ol>
+
+    <div class="footer">
+        EF Core Data Migration & Safety Best Practice Documentation
+    </div>
+</div>
+
+</body>
+</html>
