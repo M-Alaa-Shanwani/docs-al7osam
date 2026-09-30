@@ -114,6 +114,8 @@ dialog input,dialog select{display:block;width:100%;margin-top:.35rem;padding:.6
 dialog .req{color:#e5484d;margin-inline-start:.2rem}
 dialog .hint{margin:-.55rem 0 .9rem;color:var(--mist);font-size:.8rem;line-height:1.45}
 dialog .hint.target{margin-top:-.4rem;color:var(--accent);font-weight:500}
+dialog .help{background:var(--tint);border:1px solid var(--line);border-radius:10px;padding:.7rem .85rem;margin:-.3rem 0 .9rem;color:var(--ink);font-size:.8rem;line-height:1.55}
+dialog .help b{font-weight:600}dialog .help code{background:var(--card);padding:0 .3rem;border-radius:4px;font-size:.85em}
 dialog .row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
 #tokBox.need #tok,#tokBox.needRepo #ghOwner,#tokBox.needRepo #ghRepo{border-color:#e5484d;box-shadow:0 0 0 3px #e5484d33}
 #tokBox{display:none}#tokBox.on{display:block}
@@ -292,7 +294,9 @@ body.locked #gate{display:grid}
     <label id="lblBranch">Branch<input id="ghBranch" autocomplete="off" spellcheck="false" placeholder="main"></label>
     <label id="lblTok">GitHub token<span class="req">*</span><input id="tok" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…"></label>
     <p id="tokHint" class="hint"></p>
+    <div id="tokHelp" class="help"></div>
     <p id="tokTarget" class="hint target"></p>
+    <button type="button" class="btn" id="testTok" style="width:100%;margin-bottom:.8rem"></button>
   </div>
   <div class="acts"><button class="btn" id="cancel">Cancel</button><button class="btn p" id="save">Upload</button></div>
 </dialog>
@@ -332,14 +336,17 @@ en:{
   needFile:"Choose an .html file first",needAuthor:"Created by is required",
   uploaded:n=>`Uploaded as “${n}”`,
   publishing:"Publishing…",
-  publishOk:n=>`Published “${n}”. Live in about a minute.`,
+  publishOk:n=>`Published “${n}”. Other devices will see it after refresh (usually under a minute).`,
   publishFail:"Publish failed. Check the token and repo access.",
   publishErr:s=>`Publish failed: ${s}`,
   needRepo:"Set Owner + Repo (GitHub username and repository name).",
-  tokenTitle:"GitHub token",tokenHint:"Token needs Contents: Read and write on this repo. Saved in this browser only.",
+  tokenTitle:"GitHub token",tokenHint:"Create a token with Contents: Read and write on this exact repo (or classic token with repo scope).",
   tokenPh:"ghp_… or github_pat_…",tokenSave:"Save & publish",tokenNeed:"Paste your GitHub token here",tokenLabel:"GitHub token",
   ownerLabel:"Owner",repoLabel:"Repo",branchLabel:"Branch",
   targetTo:(o,r,b)=>`Will publish to ${o}/${r} @ ${b}`,
+  tokHelpHtml:`How to create the token:<br>1) GitHub → Settings → Developer settings → Personal access tokens<br>2) <b>Fine-grained</b>: Resource owner = your user, Repository access = <b>Only select</b> this repo, Permissions → <b>Contents: Read and write</b><br>3) Or <b>Classic</b> token with scope <code>repo</code><br>4) Paste the new token here (old ones without Contents write will fail)`,
+  publishPerm:"Token is valid but missing Contents: Read and write on this repo. Create a new token with that permission (see steps under the field).",
+  testTok:"Test access",testOk:(o,r)=>`OK — access to ${o}/${r}`,testFail:s=>`Token/repo check failed: ${s}`,
   download:"Download",delete:"Delete",
   dlStart:"Download started",dlFail:"Download failed",
   delConfirm:"Delete this doc from this browser?",deleted:"Deleted",
@@ -376,14 +383,17 @@ ar:{
   needFile:"اختر ملف .html أولاً",needAuthor:"حقل «أُنشئ بواسطة» إلزامي",
   uploaded:n=>`تم الرفع باسم «${n}»`,
   publishing:"جارٍ النشر…",
-  publishOk:n=>`تم نشر «${n}». هيظهر للجميع خلال دقيقة تقريباً.`,
+  publishOk:n=>`تم نشر «${n}». الأجهزة التانية هتشوفه بعد تحديث الصفحة (غالبًا أقل من دقيقة).`,
   publishFail:"فشل النشر. راجع التوكن وصلاحية المستودع.",
   publishErr:s=>`فشل النشر: ${s}`,
   needRepo:"اكتب Owner و Repo (يوزر GitHub واسم المستودع).",
-  tokenTitle:"توكن GitHub",tokenHint:"التوكن لازم يكون عنده Contents: Read and write على المستودع ده. يتخزن في هذا المتصفح فقط.",
+  tokenTitle:"توكن GitHub",tokenHint:"اعمل توكن بصلاحية Contents: Read and write على نفس الريبو ده (أو Classic عليه repo).",
   tokenPh:"ghp_… أو github_pat_…",tokenSave:"حفظ ونشر",tokenNeed:"الصق توكن GitHub هنا",tokenLabel:"توكن GitHub",
   ownerLabel:"Owner",repoLabel:"Repo",branchLabel:"Branch",
   targetTo:(o,r,b)=>`هيتنشر على ${o}/${r} @ ${b}`,
+  tokHelpHtml:`طريقة عمل التوكن:<br>1) GitHub → Settings → Developer settings → Personal access tokens<br>2) <b>Fine-grained</b>: Resource owner = حسابك، Repository access = <b>Only select</b> الريبو ده، Permissions → <b>Contents: Read and write</b><br>3) أو <b>Classic</b> وعليه صلاحية <code>repo</code><br>4) الصق التوكن الجديد هنا (القديم من غير Contents write هيفشل)`,
+  publishPerm:"التوكن شغال بس ناقصه Contents: Read and write على الريبو ده. اعمل توكن جديد بالصلاحية دي (الخطوات تحت الحقل).",
+  testTok:"اختبار الوصول",testOk:(o,r)=>`تمام — فيه وصول لـ ${o}/${r}`,testFail:s=>`فشل فحص التوكن/الريبو: ${s}`,
   download:"تحميل",delete:"حذف",
   dlStart:"بدأ التحميل",dlFail:"فشل التحميل",
   delConfirm:"حذف هذا المستند من هذا المتصفح؟",deleted:"تم الحذف",
@@ -396,8 +406,8 @@ ar:{
 /* Password gate: only PBKDF2 hash is stored (never the plaintext).
    Change password: node scripts/hash-password.mjs "YourNewPassword" then paste salt/hash below. */
 const AUTH={salt:"6064397b433e18ceea8fb81b405cec93",hash:"06fa93576df7d820d51e1c0d84b6c3323d39bcceee68c6e5c7a7f1f22decd3e2",iters:120000};
-/* Defaults — leave empty to fill from the Upload form / auto-detect on github.io */
-const PUBLISH={owner:"",repo:"",branch:"main"};
+/* Defaults for cross-device sync (raw GitHub + Pages) */
+const PUBLISH={owner:"m-alaa-shanwani",repo:"docs-al7osam",branch:"main"};
 const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1",TKEY="docs-hub-gh-token",GKEY="docs-hub-gh-target";
 let pendingUpload=null;
 const t=k=>{const v=I18N[lang][k];return typeof v==="function"?v:v};
@@ -473,11 +483,13 @@ function applyChrome(){
   $("#cancel").textContent=t("cancel");
   $("#save").textContent=t("save");
   $("#tokHint").textContent=t("tokenHint");
+  $("#tokHelp").innerHTML=t("tokHelpHtml");
   $("#tok").placeholder=t("tokenPh");
   $("#lblTok").childNodes[0].textContent=t("tokenLabel");
   $("#lblOwner").firstChild.textContent=t("ownerLabel");
   $("#lblRepo").firstChild.textContent=t("repoLabel");
   $("#lblBranch").firstChild.textContent=t("branchLabel");
+  $("#testTok").textContent=t("testTok");
   syncTokBox();
 }
 
@@ -579,10 +591,62 @@ async function tryUnlock(pw){
   }finally{$("#gateGo").disabled=false}
 }
 
+function ghSource(){
+  const s=savedTarget();
+  return{
+    owner:PUBLISH.owner||s.owner||"",
+    repo:PUBLISH.repo||s.repo||"",
+    branch:PUBLISH.branch||s.branch||"main"
+  };
+}
+function rawUrl(path,src){
+  const s=src||ghSource();
+  if(!s.owner||!s.repo||!path)return path;
+  return `https://raw.githubusercontent.com/${s.owner}/${s.repo}/${s.branch}/${String(path).replace(/^\//,"")}?t=${Date.now()}`;
+}
+function fromB64(content){
+  const bin=atob(String(content||"").replace(/\n/g,""));
+  const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+async function fetchManifest(){
+  const s=ghSource();
+  const urls=[];
+  if(s.owner&&s.repo)urls.push(rawUrl("docs.json",s));
+  urls.push(`docs.json?t=${Date.now()}`);
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{cache:"no-store"});
+      if(!r.ok)continue;
+      const data=await r.json();
+      if(Array.isArray(data))return data;
+    }catch{}
+  }
+  return[];
+}
+async function loadDocHtml(d){
+  if(d.html)return d.html;
+  const s=ghSource();
+  if(d.url&&s.owner&&s.repo){
+    try{
+      const r=await fetch(rawUrl(d.url,s),{cache:"no-store"});
+      if(r.ok)return await r.text();
+    }catch{}
+  }
+  if(d.url){
+    const r=await fetch(d.url,{cache:"no-store"});
+    if(r.ok)return await r.text();
+  }
+  throw new Error("missing");
+}
+
 async function init(){
   applyChrome();home();const t0=performance.now();
-  try{repo=(await (await fetch("docs.json",{cache:"no-cache"})).json()).map(d=>({...d,base:d.name.replace(/ v\d+$/,"")}))}catch{repo=[]}
+  try{repo=(await fetchManifest()).map(d=>({...d,base:d.base||d.name.replace(/ v\d+$/,"")}))}catch{repo=[]}
   try{local=await tx("readonly",s=>s.getAll())}catch{local=[]}
+  // Drop local copies that already exist on the shared repo list
+  const remoteIds=new Set(repo.map(d=>d.id));
+  local=local.filter(d=>!remoteIds.has(d.id));
   await new Promise(r=>setTimeout(r,Math.max(0,700-(performance.now()-t0))));
   ready=true;nav();tabsBar();main();$("#splash").classList.add("off");
 }
@@ -641,10 +705,20 @@ function docView(d){
   const author=d.createdBy?`<span class="author"><em>${t("by")}</em> ${esc(d.createdBy)}</span>`:"";
   $("#view").innerHTML=`<div class="doc enter"><div class="bar"><div class="meta"><span>${C[d.cat]} / ${esc(d.name)}</span>${author}</div><button class="btn" id="dl">${t("download")}</button>${d.local?`<button class="btn d" id="rm">${t("delete")}</button>`:""}</div><div class="fw"><div class="spin"><i></i></div><iframe sandbox="allow-scripts allow-popups" title="${esc(d.name)}"></iframe></div></div>`;
   const fr=$("iframe");fr.onload=()=>{fr.classList.add("ok");$(".spin").style.opacity=0};
-  d.local?fr.srcdoc=d.html:fr.src=d.url;
+  (async()=>{
+    try{
+      const html=await loadDocHtml(d);
+      fr.srcdoc=html;
+    }catch{
+      if(d.url)fr.src=d.url;
+      else{$(".spin").style.opacity=0;toast(t("dlFail"),1)}
+    }
+  })();
   $("#dl").onclick=async()=>{
-    try{const html=d.local?d.html:await (await fetch(d.url)).text();
-    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=d.name.replace(/\s+/g,"-")+".html";a.click();URL.revokeObjectURL(a.href);toast(t("dlStart"))}catch{toast(t("dlFail"),1)}
+    try{
+      const html=await loadDocHtml(d);
+      const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=d.name.replace(/\s+/g,"-")+".html";a.click();URL.revokeObjectURL(a.href);toast(t("dlStart"));
+    }catch{toast(t("dlFail"),1)}
   };
   if(d.local)$("#rm").onclick=async()=>{if(!confirm(t("delConfirm")))return;await tx("readwrite",s=>s.delete(d.id));local=local.filter(x=>x.id!==d.id);closeTab(d.id);toast(t("deleted"))};
 }
@@ -689,6 +763,50 @@ const slug=s=>(s.trim().toLowerCase().replace(/[_\s]+/g,"-").replace(/[^a-z0-9\u
 function getToken(){return localStorage.getItem(TKEY)||""}
 function setToken(v){v?localStorage.setItem(TKEY,v):localStorage.removeItem(TKEY)}
 
+async function putGitHubFile({target,token,path,content,message,sha}){
+  const headers={Accept:"application/vnd.github+json","Content-Type":"application/json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"};
+  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,"/")}`;
+  const body={message,content:b64(content),branch:target.branch};
+  if(sha)body.sha=sha;
+  const res=await fetch(url,{method:"PUT",headers,body:JSON.stringify(body)});
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    const detail=err.message||(err.errors&&err.errors.map(x=>x.message).join("; "))||`HTTP ${res.status}`;
+    const e=new Error(detail);
+    e.status=res.status;
+    e.code=/not accessible by personal access token/i.test(detail)?"perm":(res.status===401||res.status===403?"auth":"api");
+    throw e;
+  }
+  return res.json();
+}
+async function getGitHubFile({target,token,path}){
+  const headers={Accept:"application/vnd.github+json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"};
+  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,"/")}?ref=${encodeURIComponent(target.branch)}`;
+  const res=await fetch(url,{headers});
+  if(res.status===404)return null;
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err.message||`HTTP ${res.status}`);
+  }
+  return res.json();
+}
+async function updateDocsJson(target,token,entry){
+  const current=await getGitHubFile({target,token,path:"docs.json"});
+  let list=[];
+  if(current?.content){
+    try{list=JSON.parse(fromB64(current.content));if(!Array.isArray(list))list=[]}catch{list=[]}
+  }
+  list=list.filter(d=>d.id!==entry.id);
+  list.push(entry);
+  await putGitHubFile({
+    target,token,path:"docs.json",
+    content:JSON.stringify(list,null,2)+"\n",
+    message:`docs: index ${entry.name}`,
+    sha:current?.sha
+  });
+  return list;
+}
+
 async function publishToGitHub({html,base,name,cat,createdBy,token}){
   const target=ghTarget();
   if(!target)throw Object.assign(new Error("repo"),{code:"repo"});
@@ -697,7 +815,6 @@ async function publishToGitHub({html,base,name,cat,createdBy,token}){
   const path=`docs/${cat}/${file}`;
   const body=`<!-- docs-hub ${JSON.stringify({base,createdBy})} -->\n`+html;
   const headers={Accept:"application/vnd.github+json","Content-Type":"application/json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"};
-  // Verify repo access first for clearer errors
   const check=await fetch(`https://api.github.com/repos/${target.owner}/${target.repo}`,{headers});
   if(!check.ok){
     const err=await check.json().catch(()=>({}));
@@ -705,20 +822,10 @@ async function publishToGitHub({html,base,name,cat,createdBy,token}){
     e.status=check.status;e.code=check.status===401||check.status===403?"auth":check.status===404?"notfound":"api";
     throw e;
   }
-  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,"/")}`;
-  const res=await fetch(url,{
-    method:"PUT",
-    headers,
-    body:JSON.stringify({message:`docs: add ${name} (by ${createdBy})`,content:b64(body),branch:target.branch})
-  });
-  if(!res.ok){
-    const err=await res.json().catch(()=>({}));
-    const detail=err.message||(err.errors&&err.errors.map(x=>x.message).join("; "))||`HTTP ${res.status}`;
-    const e=new Error(detail);
-    e.status=res.status;e.code=res.status===401||res.status===403?"auth":"api";
-    throw e;
-  }
-  return{path,file,url:`docs/${cat}/${encodeURI(file)}`,target};
+  await putGitHubFile({target,token,path,content:body,message:`docs: add ${name} (by ${createdBy})`});
+  const entry={id:`${cat}/${file}`,name,cat,url:`docs/${cat}/${encodeURI(file)}`,added:new Date().toISOString(),createdBy,base};
+  await updateDocsJson(target,token,entry);
+  return{path,file,url:entry.url,target,entry};
 }
 
 async function saveLocal({html,base,cat,createdBy,name,extra={}}){
@@ -746,8 +853,17 @@ async function finishUpload(payload){
   try{
     const pub=await publishToGitHub({html,base,name,cat,createdBy,token});
     setToken(token);
-    const doc=await saveLocal({html,base,cat,createdBy,name,extra:{id:`${cat}/${pub.file}`,url:pub.url}});
-    toast(t("publishOk")(doc.name));
+    // Shared list (visible on every device after refresh) + keep html for instant open here
+    const entry={...pub.entry,html,base};
+    repo=repo.filter(d=>d.id!==entry.id).concat(entry);
+    local=local.filter(d=>d.id!==entry.id);
+    try{await tx("readwrite",s=>s.delete(entry.id))}catch{}
+    $("#dlg").close();
+    $("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");
+    $("#tokBox").classList.remove("need","needRepo");
+    pendingUpload=null;
+    go(entry.id);
+    toast(t("publishOk")(entry.name));
   }catch(e){
     const msg=String(e.message||e);
     const code=e.code||"";
@@ -755,6 +871,10 @@ async function finishUpload(payload){
       toast(t("needRepo"),1);
       $("#tokBox").classList.add("needRepo");
       $("#ghOwner").focus();
+    }else if(code==="perm"||/not accessible by personal access token/i.test(msg)){
+      toast(t("publishPerm"),1);
+      if(!$("#dlg").open)$("#dlg").showModal();
+      focusToken(1);
     }else{
       toast(t("publishErr")(msg),1);
       if(!$("#dlg").open)$("#dlg").showModal();
@@ -791,6 +911,31 @@ $("#save").onclick=async()=>{
     updateTargetHint();
   }));
 });
+$("#testTok").onclick=async()=>{
+  const target=ghTarget();
+  if(!target){toast(t("needRepo"),1);$("#tokBox").classList.add("needRepo");return}
+  const token=$("#tok").value.trim();
+  if(!token){toast(t("tokenNeed"),1);focusToken(1);return}
+  $("#testTok").disabled=true;
+  try{
+    const headers={Accept:"application/vnd.github+json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"};
+    const repo=await fetch(`https://api.github.com/repos/${target.owner}/${target.repo}`,{headers});
+    if(!repo.ok){
+      const err=await repo.json().catch(()=>({}));
+      throw new Error(err.message||`HTTP ${repo.status}`);
+    }
+    // Probe write permission without creating a lasting file: try getting contents of docs/ folder
+    const probe=await fetch(`https://api.github.com/repos/${target.owner}/${target.repo}/contents/docs?ref=${encodeURIComponent(target.branch)}`,{headers});
+    if(probe.status===401||probe.status===403){
+      const err=await probe.json().catch(()=>({}));
+      if(/not accessible by personal access token/i.test(err.message||""))throw new Error(t("publishPerm"));
+      throw new Error(err.message||`HTTP ${probe.status}`);
+    }
+    toast(t("testOk")(target.owner,target.repo));
+    saveTarget(target);setToken(token);
+  }catch(e){toast(t("testFail")(String(e.message||e)),1)}
+  finally{$("#testTok").disabled=false}
+};
 $("#gateForm").onsubmit=async e=>{
   e.preventDefault();
   const ok=await tryUnlock($("#pw").value);
