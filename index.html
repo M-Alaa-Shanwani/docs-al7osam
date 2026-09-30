@@ -272,7 +272,7 @@ body.locked #gate{display:grid}
   <div class="sw"><input id="q" type="search" placeholder="Filter by name…" aria-label="Filter docs" autocomplete="off"><kbd>/</kbd></div>
   <nav id="nav"></nav>
   <button class="up" id="upBtn">+ Upload doc</button>
-  <button class="out" id="syncBtn" type="button">Sync to all devices</button>
+  <button class="out" id="syncBtn" type="button">Refresh list</button>
   <button class="out" id="logout" type="button">Lock</button>
   <div class="by" id="builtBy">Built by <b>dev-al7osam</b></div>
 </aside>
@@ -348,14 +348,19 @@ en:{
   tokHelpHtml:`How to create the token:<br>1) GitHub → Settings → Developer settings → Personal access tokens<br>2) <b>Fine-grained</b>: Resource owner = your user, Repository access = <b>Only select</b> this repo, Permissions → <b>Contents: Read and write</b><br>3) Or <b>Classic</b> token with scope <code>repo</code><br>4) Paste the new token here (old ones without Contents write will fail)`,
   publishPerm:"Token is valid but missing Contents: Read and write on this repo. Create a new token with that permission (see steps under the field).",
   testTok:"Test access",testOk:(o,r)=>`OK — access to ${o}/${r}`,testFail:s=>`Token/repo check failed: ${s}`,
-  syncBtn:"Sync to all devices",
-  syncing:"Syncing list + app to GitHub…",
-  syncOk:n=>`Synced ${n} docs. Refresh on other devices.`,
-  syncNeedTok:"Save a GitHub token first (open Upload doc).",
-  syncFail:s=>`Sync failed: ${s}`,
+  syncBtn:"Refresh list",
+  syncing:"Refreshing list from docs/ folder…",
+  syncOk:n=>`List updated · ${n} docs from docs/ folder.`,
+  syncNeedTok:"Optional token: open Upload to save one (needed to delete/publish).",
+  syncFail:s=>`Refresh failed: ${s}`,
   download:"Download",delete:"Delete",
   dlStart:"Download started",dlFail:"Download failed",
-  delConfirm:"Delete this doc from this browser?",deleted:"Deleted",
+  delConfirm:"Delete this doc from this browser only?",
+  delConfirmRemote:"Delete this doc from GitHub (docs/ folder)? This cannot be undone.",
+  deleted:"Deleted",
+  deleting:"Deleting…",
+  deleteNeedTok:"Paste a GitHub token (Upload dialog) to delete from the repo.",
+  deleteFail:s=>`Delete failed: ${s}`,
   by:"by",logout:"Lock",
   gateSub:"Enter the access password",password:"Password",unlock:"Unlock",
   badPass:"Wrong password",waitLock:s=>`Too many attempts. Wait ${s}s`,
@@ -400,14 +405,19 @@ ar:{
   tokHelpHtml:`طريقة عمل التوكن:<br>1) GitHub → Settings → Developer settings → Personal access tokens<br>2) <b>Fine-grained</b>: Resource owner = حسابك، Repository access = <b>Only select</b> الريبو ده، Permissions → <b>Contents: Read and write</b><br>3) أو <b>Classic</b> وعليه صلاحية <code>repo</code><br>4) الصق التوكن الجديد هنا (القديم من غير Contents write هيفشل)`,
   publishPerm:"التوكن شغال بس ناقصه Contents: Read and write على الريبو ده. اعمل توكن جديد بالصلاحية دي (الخطوات تحت الحقل).",
   testTok:"اختبار الوصول",testOk:(o,r)=>`تمام — فيه وصول لـ ${o}/${r}`,testFail:s=>`فشل فحص التوكن/الريبو: ${s}`,
-  syncBtn:"مزامنة لكل الأجهزة",
-  syncing:"جارٍ مزامنة القائمة والتطبيق على GitHub…",
-  syncOk:n=>`تمت مزامنة ${n} مستند. حدّث الصفحة على الأجهزة التانية.`,
-  syncNeedTok:"احفظ توكن GitHub أولاً (من رفع مستند).",
-  syncFail:s=>`فشلت المزامنة: ${s}`,
+  syncBtn:"تحديث القائمة",
+  syncing:"جارٍ تحديث القائمة من مجلد docs/…",
+  syncOk:n=>`تم التحديث · ${n} مستند من مجلد docs/.`,
+  syncNeedTok:"التوكن اختياري للقراءة. للحذف/النشر افتح رفع مستند واحفظ توكن.",
+  syncFail:s=>`فشل التحديث: ${s}`,
   download:"تحميل",delete:"حذف",
   dlStart:"بدأ التحميل",dlFail:"فشل التحميل",
-  delConfirm:"حذف هذا المستند من هذا المتصفح؟",deleted:"تم الحذف",
+  delConfirm:"حذف هذا المستند من هذا المتصفح فقط؟",
+  delConfirmRemote:"حذف المستند من GitHub (مجلد docs/)؟ لا يمكن التراجع.",
+  deleted:"تم الحذف",
+  deleting:"جارٍ الحذف…",
+  deleteNeedTok:"الصق توكن GitHub (من نافذة الرفع) عشان تحذف من الريبو.",
+  deleteFail:s=>`فشل الحذف: ${s}`,
   by:"بواسطة",logout:"قفل",
   gateSub:"أدخل كلمة مرور الدخول",password:"كلمة المرور",unlock:"فتح",
   badPass:"كلمة المرور غير صحيحة",waitLock:s=>`محاولات كثيرة. انتظر ${s}ث`,
@@ -631,25 +641,16 @@ function ghHeaders(withToken){
 }
 async function fetchManifest(){
   const s=ghSource();
-  // Always list real HTML files under docs/* (never trust stale docs.json first)
+  // Always list real HTML files under docs/* — trust scan even when empty (deletes)
   if(s.owner&&s.repo){
     try{
       const scanned=await scanRemoteDocs(s);
-      if(scanned.length){
-        const tok=getToken();
-        if(tok)repairDocsJson(s,tok,scanned).catch(()=>{});
-        return scanned;
-      }
+      const tok=getToken();
+      if(tok)repairDocsJson(s,tok,scanned).catch(()=>{});
+      return scanned;
     }catch(e){console.warn("scanRemoteDocs",e)}
   }
-  // Fallback only when GitHub scan is empty/unavailable
-  try{
-    const r=await fetch(`docs.json?t=${Date.now()}`,{cache:"no-store"});
-    if(r.ok){
-      const data=await r.json();
-      if(Array.isArray(data)&&data.length)return data;
-    }
-  }catch{}
+  // Fallback only when GitHub scan is unavailable
   if(s.owner&&s.repo){
     try{
       const r=await fetch(rawUrl("docs.json",s),{cache:"no-store"});
@@ -659,7 +660,24 @@ async function fetchManifest(){
       }
     }catch{}
   }
+  try{
+    const r=await fetch(`docs.json?t=${Date.now()}`,{cache:"no-store"});
+    if(r.ok){
+      const data=await r.json();
+      if(Array.isArray(data))return data;
+    }
+  }catch{}
   return[];
+}
+async function reloadRepoList(){
+  const list=await fetchManifest();
+  repo=list.map(d=>({...d,base:d.base||d.name.replace(/ v\d+$/,"")}));
+  const remoteIds=new Set(repo.map(d=>d.id));
+  local=local.filter(d=>!remoteIds.has(d.id));
+  tabs=tabs.filter(id=>id==="home"||find(id));
+  if(cur!=="home"&&!find(cur))cur="home";
+  nav();tabsBar();main();
+  return repo.length;
 }
 async function scanRemoteDocs(s){
   // Public read: do NOT send a token (bad/expired PAT breaks public API with 401/403)
@@ -819,7 +837,7 @@ document.addEventListener("pointermove",e=>{const el=e.target.closest?.(".stat,.
 function docView(d){
   const C=cats();
   const author=d.createdBy?`<span class="author"><em>${t("by")}</em> ${esc(d.createdBy)}</span>`:"";
-  $("#view").innerHTML=`<div class="doc enter"><div class="bar"><div class="meta"><span>${C[d.cat]} / ${esc(d.name)}</span>${author}</div><button class="btn" id="dl">${t("download")}</button>${d.local?`<button class="btn d" id="rm">${t("delete")}</button>`:""}</div><div class="fw"><div class="spin"><i></i></div><iframe sandbox="allow-scripts allow-popups" title="${esc(d.name)}"></iframe></div></div>`;
+  $("#view").innerHTML=`<div class="doc enter"><div class="bar"><div class="meta"><span>${C[d.cat]} / ${esc(d.name)}</span>${author}</div><button class="btn" id="dl">${t("download")}</button><button class="btn d" id="rm">${t("delete")}</button></div><div class="fw"><div class="spin"><i></i></div><iframe sandbox="allow-scripts allow-popups" title="${esc(d.name)}"></iframe></div></div>`;
   const fr=$("iframe");fr.onload=()=>{fr.classList.add("ok");$(".spin").style.opacity=0};
   (async()=>{
     try{
@@ -836,7 +854,34 @@ function docView(d){
       const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=d.name.replace(/\s+/g,"-")+".html";a.click();URL.revokeObjectURL(a.href);toast(t("dlStart"));
     }catch{toast(t("dlFail"),1)}
   };
-  if(d.local)$("#rm").onclick=async()=>{if(!confirm(t("delConfirm")))return;await tx("readwrite",s=>s.delete(d.id));local=local.filter(x=>x.id!==d.id);closeTab(d.id);toast(t("deleted"))};
+  $("#rm").onclick=async()=>{
+    if(d.local){
+      if(!confirm(t("delConfirm")))return;
+      await tx("readwrite",s=>s.delete(d.id));
+      local=local.filter(x=>x.id!==d.id);
+      closeTab(d.id);toast(t("deleted"));
+      return;
+    }
+    if(!confirm(t("delConfirmRemote")))return;
+    const token=getToken()||($("#tok")&&$("#tok").value.trim());
+    if(!token){toast(t("deleteNeedTok"),1);$("#upBtn").click();focusToken(0);return}
+    const target=ghTarget()||ghSource();
+    $("#rm").disabled=true;toast(t("deleting"));
+    try{
+      setToken(token);saveTarget(target);
+      const path=(d.url||`docs/${d.id}`).replace(/^\//,"");
+      await deleteGitHubFile({target,token,path});
+      const list=await scanRemoteDocs(target);
+      await ensureSiteFiles(target,token,list);
+      repo=list.map(x=>({...x,base:x.base||x.name.replace(/ v\d+$/,"")}));
+      closeTab(d.id);
+      nav();tabsBar();
+      toast(t("deleted"));
+    }catch(e){
+      toast(t("deleteFail")(String(e.message||e)),1);
+      if(e.code==="auth"||e.code==="perm"){focusToken(1);if(!$("#dlg").open)$("#upBtn").click()}
+    }finally{$("#rm").disabled=false}
+  };
 }
 
 function go(id){cur=id;if(id!=="home"&&!tabs.includes(id))tabs.push(id);document.body.classList.remove("menu");nav();tabsBar();main()}
@@ -905,6 +950,25 @@ async function getGitHubFile({target,token,path}){
     throw new Error(err.message||`HTTP ${res.status}`);
   }
   return res.json();
+}
+async function deleteGitHubFile({target,token,path}){
+  const cur=await getGitHubFile({target,token,path});
+  if(!cur?.sha)return false;
+  const headers={Accept:"application/vnd.github+json","Content-Type":"application/json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"};
+  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,"/")}`;
+  const res=await fetch(url,{
+    method:"DELETE",
+    headers,
+    body:JSON.stringify({message:`docs: delete ${path}`,sha:cur.sha,branch:target.branch})
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    const detail=err.message||`HTTP ${res.status}`;
+    const e=new Error(detail);
+    e.code=/not accessible by personal access token/i.test(detail)?"perm":(res.status===401||res.status===403?"auth":"api");
+    throw e;
+  }
+  return true;
 }
 async function updateDocsJson(target,token,entry){
   const current=await getGitHubFile({target,token,path:"docs.json"});
@@ -1096,23 +1160,25 @@ $("#gateForm").onsubmit=async e=>{
 };
 $("#logout").onclick=()=>lockApp();
 $("#syncBtn").onclick=async()=>{
-  const token=getToken()||($("#tok")&&$("#tok").value.trim());
-  if(!token){toast(t("syncNeedTok"),1);$("#upBtn").click();return}
-  const target=ghTarget()||ghSource();
-  if(!target.owner||!target.repo){toast(t("needRepo"),1);return}
   $("#syncBtn").disabled=true;toast(t("syncing"));
   try{
-    saveTarget(target);setToken(token);
-    const list=await scanRemoteDocs(target);
-    await ensureSiteFiles(target,token,list);
-    repo=list.map(d=>({...d,base:d.base||d.name.replace(/ v\d+$/,"")}));
-    const remoteIds=new Set(repo.map(d=>d.id));
-    local=local.filter(d=>!remoteIds.has(d.id));
-    nav();tabsBar();if(cur==="home")home();
-    toast(t("syncOk")(list.length));
+    const n=await reloadRepoList();
+    const token=getToken()||($("#tok")&&$("#tok").value.trim());
+    const target=ghTarget()||ghSource();
+    if(token&&target.owner&&target.repo){
+      saveTarget(target);setToken(token);
+      await ensureSiteFiles(target,token,repo);
+    }
+    toast(t("syncOk")(n));
   }catch(e){toast(t("syncFail")(String(e.message||e)),1)}
   finally{$("#syncBtn").disabled=false}
 };
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"&&isUnlocked()&&ready)reloadRepoList().catch(()=>{});
+});
+window.addEventListener("focus",()=>{
+  if(isUnlocked()&&ready)reloadRepoList().catch(()=>{});
+});
 applyChrome();
 if(isUnlocked())enterApp();
 else{$("#pw").focus()}
