@@ -273,6 +273,12 @@ body.locked #gate{display:grid}
   <label id="lblCat">Category<select id="c"><option value="backend">Backend</option><option value="frontend">Frontend</option><option value="third-party">Third party</option></select></label>
   <div class="acts"><button class="btn" id="cancel">Cancel</button><button class="btn p" id="save">Upload</button></div>
 </dialog>
+<dialog id="tokDlg">
+  <h3 id="tokTitle">GitHub token</h3>
+  <p id="tokHint" style="margin:0 0 1rem;color:var(--mist);font-size:.9rem;line-height:1.5"></p>
+  <label id="lblTok">Token<input id="tok" type="password" autocomplete="off" spellcheck="false"></label>
+  <div class="acts"><button class="btn" id="tokCancel">Cancel</button><button class="btn p" id="tokSave">Save & publish</button></div>
+</dialog>
 <div id="toast" role="status"></div>
 
 <script>
@@ -292,24 +298,28 @@ en:{
   heroTitle:"One place for every doc.",heroLead:"Your team's ",
   totalDocs:"Total docs",versioned:"Versioned copies",
   howTitle:"How it works",
-  step1t:"Pick a category",step1d:"Backend, Frontend or Third party. Each has its own folder under <b>docs/</b>.",
-  step2t:"Add your HTML",step2d:"Drop the file in its folder, or use <b>Upload doc</b> in the sidebar.",
-  step3t:"Push to main",step3d:"GitHub Actions rebuilds the index and publishes the site automatically.",
+  step1t:"Open Upload",step1d:"Click <b>Upload doc</b> in the sidebar — no folders or git commands.",
+  step2t:"Fill the details",step2d:"Choose the category, name, and <b>Created by</b>, then drop your <code>.html</code> file.",
+  step3t:"It publishes itself",step3d:"The hub writes the file to the repo. GitHub Actions rebuilds and deploys automatically.",
   step4t:"Find and share",step4d:"Press <b>/</b> to filter, open docs in tabs, and download any of them.",
   knowTitle:"Good to know",
   rule1:"Same name in the same category gets <code>v1</code>, then <code>v2</code>, and so on.",
-  rule2:"The file name becomes the doc name. Dashes and underscores turn into spaces.",
+  rule2:"The display name comes from what you type (or the file name). Dashes and underscores become spaces.",
   rule3:"Only <code>.html</code> files. They open in a sandbox, so scripts inside them can't touch the hub.",
-  rule4:"<b>Upload doc</b> saves in this browser only. Download it and commit it to share with the team.",
-  recentTitle:"Recently added",noDocs:"<b>No docs yet</b><br>Upload an .html file or add one under <code>docs/</code>.",
-  codeCm1:"# 1. add the file",codeCm2:"# 2. publish",copy:"Copy",
-  cmdCopied:"Command copied",copyFailed:"Copy failed",
+  rule4:"First publish asks once for a GitHub token (Contents write). It’s saved in this browser only.",
+  recentTitle:"Recently added",noDocs:"<b>No docs yet</b><br>Use <b>Upload doc</b> to publish your first file.",
   dlgTitle:"Upload doc",dropHint:"Drop your .html file here",browse:"or click to browse",
   name:"Name",namePh:"Defaults to file name",
   createdBy:"Created by",createdByPh:"Your name",category:"Category",
   cancel:"Cancel",save:"Upload",
   needFile:"Choose an .html file first",needAuthor:"Created by is required",
   uploaded:n=>`Uploaded as “${n}”`,
+  publishing:"Publishing…",
+  publishOk:n=>`Published “${n}”. Live in about a minute.`,
+  publishFail:"Publish failed. Check the token and repo access.",
+  needRepo:"Set PUBLISH.owner / PUBLISH.repo in index.html, or open the site on GitHub Pages.",
+  tokenTitle:"GitHub token",tokenHint:"Paste a Personal Access Token with Contents: Read and write. Saved in this browser only.",
+  tokenPh:"ghp_… or github_pat_…",tokenSave:"Save & publish",tokenNeed:"GitHub token is required to publish",tokenLabel:"Token",
   download:"Download",delete:"Delete",
   dlStart:"Download started",dlFail:"Download failed",
   delConfirm:"Delete this doc from this browser?",deleted:"Deleted",
@@ -329,24 +339,28 @@ ar:{
   heroTitle:"مكان واحد لكل مستند.",heroLead:"مستندات فريقك: ",
   totalDocs:"إجمالي المستندات",versioned:"نسخ بإصدارات",
   howTitle:"كيف يعمل",
-  step1t:"اختر التصنيف",step1d:"Backend أو Frontend أو طرف ثالث. لكل تصنيف مجلد خاص تحت <b>docs/</b>.",
-  step2t:"أضف ملف HTML",step2d:"ضع الملف في مجلده، أو استخدم <b>رفع مستند</b> من الشريط الجانبي.",
-  step3t:"ادفع إلى main",step3d:"GitHub Actions يعيد بناء الفهرس وينشر الموقع تلقائياً.",
+  step1t:"افتح الرفع",step1d:"اضغط <b>رفع مستند</b> من الشريط الجانبي — من غير مجلدات ولا أوامر git.",
+  step2t:"أكمل البيانات",step2d:"اختر التصنيف والاسم و<b>أُنشئ بواسطة</b>، ثم أسقط ملف <code>.html</code>.",
+  step3t:"النشر تلقائي",step3d:"الموقع يكتب الملف في المستودع. GitHub Actions يعيد البناء والنشر لوحده.",
   step4t:"ابحث وشارك",step4d:"اضغط <b>/</b> للتصفية، وافتح المستندات في تبويبات، وحمّل أي منها.",
   knowTitle:"معلومات مفيدة",
   rule1:"نفس الاسم في نفس التصنيف يحصل على <code>v1</code> ثم <code>v2</code> وهكذا.",
-  rule2:"اسم الملف يصبح اسم المستند. الشرطات والخطوط السفلية تتحول إلى مسافات.",
+  rule2:"اسم العرض من اللي بتكتبه (أو اسم الملف). الشرطات والخطوط السفلية تبقى مسافات.",
   rule3:"ملفات <code>.html</code> فقط. تُفتح في بيئة معزولة فلا تمس السكربتات الموقع.",
-  rule4:"<b>رفع مستند</b> يحفظ في هذا المتصفح فقط. حمّله ثم أضفه للمستودع لمشاركته مع الفريق.",
-  recentTitle:"أُضيف حديثاً",noDocs:"<b>لا مستندات بعد</b><br>ارفع ملف .html أو أضفه تحت <code>docs/</code>.",
-  codeCm1:"# 1. أضف الملف",codeCm2:"# 2. انشر",copy:"نسخ",
-  cmdCopied:"تم نسخ الأمر",copyFailed:"فشل النسخ",
+  rule4:"أول نشر يطلب توكن GitHub مرة واحدة (صلاحية Contents). يتخزن في هذا المتصفح فقط.",
+  recentTitle:"أُضيف حديثاً",noDocs:"<b>لا مستندات بعد</b><br>استخدم <b>رفع مستند</b> لنشر أول ملف.",
   dlgTitle:"رفع مستند",dropHint:"اسحب ملف .html هنا",browse:"أو انقر للاختيار",
   name:"الاسم",namePh:"الافتراضي اسم الملف",
   createdBy:"أُنشئ بواسطة",createdByPh:"اسمك",category:"التصنيف",
   cancel:"إلغاء",save:"رفع",
   needFile:"اختر ملف .html أولاً",needAuthor:"حقل «أُنشئ بواسطة» إلزامي",
   uploaded:n=>`تم الرفع باسم «${n}»`,
+  publishing:"جارٍ النشر…",
+  publishOk:n=>`تم نشر «${n}». هيظهر للجميع خلال دقيقة تقريباً.`,
+  publishFail:"فشل النشر. راجع التوكن وصلاحية المستودع.",
+  needRepo:"اضبط PUBLISH.owner / PUBLISH.repo في index.html، أو افتح الموقع على GitHub Pages.",
+  tokenTitle:"توكن GitHub",tokenHint:"الصق Personal Access Token بصلاحية Contents: Read and write. يتخزن في هذا المتصفح فقط.",
+  tokenPh:"ghp_… أو github_pat_…",tokenSave:"حفظ ونشر",tokenNeed:"توكن GitHub مطلوب للنشر",tokenLabel:"التوكن",
   download:"تحميل",delete:"حذف",
   dlStart:"بدأ التحميل",dlFail:"فشل التحميل",
   delConfirm:"حذف هذا المستند من هذا المتصفح؟",deleted:"تم الحذف",
@@ -359,7 +373,10 @@ ar:{
 /* Password gate: only PBKDF2 hash is stored (never the plaintext).
    Change password: node scripts/hash-password.mjs "YourNewPassword" then paste salt/hash below. */
 const AUTH={salt:"6064397b433e18ceea8fb81b405cec93",hash:"06fa93576df7d820d51e1c0d84b6c3323d39bcceee68c6e5c7a7f1f22decd3e2",iters:120000};
-const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1";
+/* Auto-publish via GitHub Contents API. Leave owner/repo empty to auto-detect on *.github.io */
+const PUBLISH={owner:"",repo:"",branch:"main"};
+const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1",TKEY="docs-hub-gh-token";
+let pendingUpload=null;
 const t=k=>{const v=I18N[lang][k];return typeof v==="function"?v:v};
 const cats=()=>({backend:t("backend"),frontend:t("frontend"),"third-party":t("third-party")});
 
@@ -421,6 +438,12 @@ function applyChrome(){
   $("#c").value=prevCat||"backend";
   $("#cancel").textContent=t("cancel");
   $("#save").textContent=t("save");
+  $("#tokTitle").textContent=t("tokenTitle");
+  $("#tokHint").textContent=t("tokenHint");
+  $("#tok").placeholder=t("tokenPh");
+  $("#lblTok").firstChild.textContent=t("tokenLabel");
+  $("#tokCancel").textContent=t("cancel");
+  $("#tokSave").textContent=t("tokenSave");
 }
 
 function setLang(next){
@@ -515,16 +538,11 @@ function home(){
     <h1>${t("heroTitle")}</h1><p>${t("heroLead")}<span class="typer" id="typer"></span></p></div>
   <div class="body"><div class="stats">${st(d.length,t("totalDocs"),0,"","total")}${Object.entries(C).map(([k,l],i)=>st(d.filter(x=>x.cat===k).length,l,i+1,k,k)).join("")}${st(d.filter(x=>/ v\d+$/.test(x.name)).length,t("versioned"),4,"","ver")}</div>
   <h2>${ic("book")}${t("howTitle")}</h2>
-  <div class="steps">${step(0,"folder",t("step1t"),t("step1d"))}${step(1,"upload",t("step2t"),t("step2d"))}${step(2,"git",t("step3t"),t("step3d"))}${step(3,"search",t("step4t"),t("step4d"))}</div>
-  <div class="code" id="code"><span class="cm">${t("codeCm1")}</span>
-docs/backend/<b>my-doc.html</b>
-<span class="cm">${t("codeCm2")}</span>
-git add . && git commit -m "add doc" && git push<button id="cp" title="${t("copy")}">${ic("copy")}</button></div>
+  <div class="steps">${step(0,"upload",t("step1t"),t("step1d"))}${step(1,"folder",t("step2t"),t("step2d"))}${step(2,"bolt",t("step3t"),t("step3d"))}${step(3,"search",t("step4t"),t("step4d"))}</div>
   <h2>${ic("info")}${t("knowTitle")}</h2>
   <div class="rules">${rule(0,"check",t("rule1"))}${rule(1,"check",t("rule2"))}${rule(2,"bolt",t("rule3"))}${rule(3,"info",t("rule4"),1)}</div>
   <h2>${ic("clock")}${t("recentTitle")}</h2>${latest.length?latest.map((x,i)=>`<button class="row" style="--i:${i};--g:var(--c-${x.cat})" data-id="${esc(x.id)}"><span><i class="dot" style="color:var(--g)">${ic(x.cat)}</i>${esc(x.name)}${x.createdBy?`<small style="margin-inline-start:.4rem;opacity:.75">· ${esc(x.createdBy)}</small>`:""}</span><small>${C[x.cat]} · ${fmtDate(x.added)}</small></button>`).join(""):`<div class="empty">${t("noDocs")}</div>`}</div></div>`;
   typer($("#typer"));
-  $("#cp").onclick=()=>{navigator.clipboard?.writeText('git add . && git commit -m "add doc" && git push').then(()=>toast(t("cmdCopied")),()=>toast(t("copyFailed")))};
   document.querySelectorAll("[data-n]").forEach(el=>countUp(el,+el.dataset.n));
 }
 
@@ -573,18 +591,91 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){$("#q").value="";nav();document.body.classList.remove("menu")}
 });
 $("#upBtn").onclick=()=>{$("#dlg").showModal()};
-$("#cancel").onclick=()=>$("#dlg").close();
+$("#cancel").onclick=()=>{$("#dlg").close();pendingUpload=null};
 const pick=f=>{if(!f)return;const dt=new DataTransfer();dt.items.add(f);$("#f").files=dt.files;$("#fn").textContent=f.name};
 $("#f").onchange=e=>pick(e.target.files[0]);
 ["dragover","dragenter"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.add("over")}));
 ["dragleave","drop"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.remove("over");if(ev==="drop")pick(e.dataTransfer.files[0])}));
+
+const b64=str=>btoa(unescape(encodeURIComponent(str)));
+const slug=s=>(s.trim().toLowerCase().replace(/[_\s]+/g,"-").replace(/[^a-z0-9\u0600-\u06ff-]+/gi,"").replace(/-+/g,"-").replace(/^-|-$/g,"")||"doc");
+function ghTarget(){
+  if(PUBLISH.owner&&PUBLISH.repo)return{owner:PUBLISH.owner,repo:PUBLISH.repo,branch:PUBLISH.branch||"main"};
+  const host=location.hostname;
+  if(host.endsWith(".github.io")){
+    const owner=host.slice(0,-".github.io".length);
+    const parts=location.pathname.split("/").filter(Boolean);
+    return{owner,repo:parts[0]||`${owner}.github.io`,branch:PUBLISH.branch||"main"};
+  }
+  return null;
+}
+function getToken(){return localStorage.getItem(TKEY)||""}
+function setToken(v){v?localStorage.setItem(TKEY,v):localStorage.removeItem(TKEY)}
+
+async function publishToGitHub({html,base,name,cat,createdBy,token}){
+  const target=ghTarget();
+  if(!target)throw new Error("repo");
+  const file=`${slug(base)}-${Date.now()}.html`;
+  const path=`docs/${cat}/${file}`;
+  const body=`<!-- docs-hub ${JSON.stringify({base,createdBy})} -->\n`+html;
+  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${path}`;
+  const res=await fetch(url,{
+    method:"PUT",
+    headers:{Accept:"application/vnd.github+json","Content-Type":"application/json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"},
+    body:JSON.stringify({message:`docs: add ${name} (by ${createdBy})`,content:b64(body),branch:target.branch})
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err.message||String(res.status));
+  }
+  return{path,file,url:`docs/${cat}/${encodeURI(file)}`};
+}
+
+async function saveLocal({html,base,cat,createdBy,name,extra={}}){
+  const doc={id:extra.id||("local/"+Date.now()),base,name:name||versioned(base,cat),cat,createdBy,html,added:new Date().toISOString(),local:true,...extra};
+  await tx("readwrite",s=>s.put(doc));local.push(doc);
+  $("#dlg").close();$("#tokDlg").close();
+  $("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");$("#tok").value="";
+  pendingUpload=null;
+  go(doc.id);
+  return doc;
+}
+
+async function finishUpload(payload){
+  const{html,base,cat,createdBy,token}=payload;
+  const name=versioned(base,cat);
+  $("#save").disabled=true;$("#tokSave").disabled=true;toast(t("publishing"));
+  try{
+    const pub=await publishToGitHub({html,base,name,cat,createdBy,token});
+    const doc=await saveLocal({html,base,cat,createdBy,name,extra:{id:`${cat}/${pub.file}`,url:pub.url}});
+    toast(t("publishOk")(doc.name));
+  }catch(e){
+    if(String(e.message||e)==="repo")toast(t("needRepo"));
+    else{toast(t("publishFail"));if(/Bad credentials|401|403|Requires authentication/i.test(String(e.message||e))){setToken("");$("#tokDlg").showModal()}}
+  }finally{$("#save").disabled=false;$("#tokSave").disabled=false}
+}
+
 $("#save").onclick=async()=>{
   const file=$("#f").files[0];if(!file)return toast(t("needFile"));
   const createdBy=$("#author").value.trim();if(!createdBy)return toast(t("needAuthor"));
   const cat=$("#c").value,base=$("#n").value.trim()||file.name.replace(/\.html?$/i,"").replace(/[-_]+/g," ");
-  const doc={id:"local/"+Date.now(),base,name:versioned(base,cat),cat,createdBy,html:await file.text(),added:new Date().toISOString(),local:true};
-  await tx("readwrite",s=>s.put(doc));local.push(doc);
-  $("#dlg").close();$("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");go(doc.id);toast(t("uploaded")(doc.name));
+  const html=await file.text();
+  pendingUpload={html,base,cat,createdBy};
+  if(!ghTarget()){
+    const doc=await saveLocal(pendingUpload);
+    toast(t("uploaded")(doc.name));
+    return;
+  }
+  const token=getToken();
+  if(!token){$("#dlg").close();$("#tokDlg").showModal();$("#tok").focus();return}
+  await finishUpload({...pendingUpload,token});
+};
+$("#tokCancel").onclick=()=>{$("#tokDlg").close();pendingUpload=null;$("#dlg").showModal()};
+$("#tokSave").onclick=async()=>{
+  const token=$("#tok").value.trim();if(!token)return toast(t("tokenNeed"));
+  if(!pendingUpload)return $("#tokDlg").close();
+  setToken(token);
+  await finishUpload({...pendingUpload,token});
 };
 $("#gateForm").onsubmit=async e=>{
   e.preventDefault();

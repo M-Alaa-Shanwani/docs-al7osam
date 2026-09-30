@@ -1,13 +1,17 @@
 # Docs Hub
-Static docs portal by dev-al7osam: Home stats, sidebar, name filter, tabs, auto-versioning, download.
+Static docs portal by dev-al7osam: Home stats, sidebar, name filter, tabs, auto-versioning, download, Arabic/English, password gate.
 
-## Add docs (shared with the team)
-Put an `.html` file in `docs/backend/`, `docs/frontend/` or `docs/third-party/` and push to `main`.
-GitHub Actions rebuilds `docs.json` and deploys to GitHub Pages (Settings → Pages → Source: GitHub Actions).
-Duplicate names auto-version: `name`, `name v1`, `name v2`…
+## Upload (recommended)
+Use **Upload doc** in the sidebar. The site publishes the file to the GitHub repo via the API; Actions rebuilds the index and deploys.
 
-## Upload button
-Uploads from the UI are stored in that browser only (IndexedDB). To share one, download it and commit it to `docs/<category>/`.
+1. Unlock the site with the access password.
+2. On first publish, paste a GitHub Personal Access Token with **Contents: Read and write** (and repo access).
+3. Fill name, created by, category, pick the `.html` file → Upload.
+
+Optional: set owner/repo in `index.html` (`PUBLISH = { owner, repo, branch }`). On GitHub Pages this is auto-detected from the URL.
 
 ## Local run
 `node scripts/build-manifest.mjs && npx serve .`
+
+## Password
+Change with: `node scripts/hash-password.mjs "YourNewPassword"` then replace `AUTH` in `index.html`.
