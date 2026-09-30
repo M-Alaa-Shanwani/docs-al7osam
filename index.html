@@ -112,6 +112,12 @@ dialog[open]{animation:pop .3s var(--ease)}dialog::backdrop{background:#0a0820aa
 dialog h3{margin:0 0 1rem}dialog label{display:block;margin-bottom:.9rem;font-size:.88rem;color:var(--mist)}
 dialog input,dialog select{display:block;width:100%;margin-top:.35rem;padding:.65rem;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}
 dialog .req{color:#e5484d;margin-inline-start:.2rem}
+dialog .hint{margin:-.55rem 0 .9rem;color:var(--mist);font-size:.8rem;line-height:1.45}
+dialog .hint.target{margin-top:-.4rem;color:var(--accent);font-weight:500}
+dialog .row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+#tokBox.need #tok,#tokBox.needRepo #ghOwner,#tokBox.needRepo #ghRepo{border-color:#e5484d;box-shadow:0 0 0 3px #e5484d33}
+#tokBox{display:none}#tokBox.on{display:block}
+@media(max-width:480px){dialog .row2{grid-template-columns:1fr}}
 .drop{display:block;text-align:center;border:2px dashed var(--line);border-radius:14px;padding:1.4rem;margin-bottom:.9rem;color:var(--mist);transition:border-color .2s,background .2s}
 .drop.over,.drop:hover{border-color:var(--accent);background:var(--tint)}.drop input{display:none}.drop b{color:var(--ink);display:block;margin-top:.2rem}
 .acts{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
@@ -278,13 +284,17 @@ body.locked #gate{display:grid}
   <label id="lblName">Name<input id="n" placeholder="Defaults to file name"></label>
   <label id="lblAuthor">Created by<span class="req">*</span><input id="author" placeholder="Your name" required></label>
   <label id="lblCat">Category<select id="c"><option value="backend">Backend</option><option value="frontend">Frontend</option><option value="third-party">Third party</option></select></label>
+  <div id="tokBox">
+    <div class="row2">
+      <label id="lblOwner">Owner<input id="ghOwner" autocomplete="off" spellcheck="false" placeholder="github-username"></label>
+      <label id="lblRepo">Repo<input id="ghRepo" autocomplete="off" spellcheck="false" placeholder="docs-hub"></label>
+    </div>
+    <label id="lblBranch">Branch<input id="ghBranch" autocomplete="off" spellcheck="false" placeholder="main"></label>
+    <label id="lblTok">GitHub token<span class="req">*</span><input id="tok" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…"></label>
+    <p id="tokHint" class="hint"></p>
+    <p id="tokTarget" class="hint target"></p>
+  </div>
   <div class="acts"><button class="btn" id="cancel">Cancel</button><button class="btn p" id="save">Upload</button></div>
-</dialog>
-<dialog id="tokDlg">
-  <h3 id="tokTitle">GitHub token</h3>
-  <p id="tokHint" style="margin:0 0 1rem;color:var(--mist);font-size:.9rem;line-height:1.5"></p>
-  <label id="lblTok">Token<input id="tok" type="password" autocomplete="off" spellcheck="false"></label>
-  <div class="acts"><button class="btn" id="tokCancel">Cancel</button><button class="btn p" id="tokSave">Save & publish</button></div>
 </dialog>
 <div id="toast" role="status" popover="manual"></div>
 
@@ -324,9 +334,12 @@ en:{
   publishing:"Publishing…",
   publishOk:n=>`Published “${n}”. Live in about a minute.`,
   publishFail:"Publish failed. Check the token and repo access.",
-  needRepo:"Set PUBLISH.owner / PUBLISH.repo in index.html, or open the site on GitHub Pages.",
-  tokenTitle:"GitHub token",tokenHint:"Paste a Personal Access Token with Contents: Read and write. Saved in this browser only.",
-  tokenPh:"ghp_… or github_pat_…",tokenSave:"Save & publish",tokenNeed:"GitHub token is required to publish",tokenLabel:"Token",
+  publishErr:s=>`Publish failed: ${s}`,
+  needRepo:"Set Owner + Repo (GitHub username and repository name).",
+  tokenTitle:"GitHub token",tokenHint:"Token needs Contents: Read and write on this repo. Saved in this browser only.",
+  tokenPh:"ghp_… or github_pat_…",tokenSave:"Save & publish",tokenNeed:"Paste your GitHub token here",tokenLabel:"GitHub token",
+  ownerLabel:"Owner",repoLabel:"Repo",branchLabel:"Branch",
+  targetTo:(o,r,b)=>`Will publish to ${o}/${r} @ ${b}`,
   download:"Download",delete:"Delete",
   dlStart:"Download started",dlFail:"Download failed",
   delConfirm:"Delete this doc from this browser?",deleted:"Deleted",
@@ -365,9 +378,12 @@ ar:{
   publishing:"جارٍ النشر…",
   publishOk:n=>`تم نشر «${n}». هيظهر للجميع خلال دقيقة تقريباً.`,
   publishFail:"فشل النشر. راجع التوكن وصلاحية المستودع.",
-  needRepo:"اضبط PUBLISH.owner / PUBLISH.repo في index.html، أو افتح الموقع على GitHub Pages.",
-  tokenTitle:"توكن GitHub",tokenHint:"الصق Personal Access Token بصلاحية Contents: Read and write. يتخزن في هذا المتصفح فقط.",
-  tokenPh:"ghp_… أو github_pat_…",tokenSave:"حفظ ونشر",tokenNeed:"توكن GitHub مطلوب للنشر",tokenLabel:"التوكن",
+  publishErr:s=>`فشل النشر: ${s}`,
+  needRepo:"اكتب Owner و Repo (يوزر GitHub واسم المستودع).",
+  tokenTitle:"توكن GitHub",tokenHint:"التوكن لازم يكون عنده Contents: Read and write على المستودع ده. يتخزن في هذا المتصفح فقط.",
+  tokenPh:"ghp_… أو github_pat_…",tokenSave:"حفظ ونشر",tokenNeed:"الصق توكن GitHub هنا",tokenLabel:"توكن GitHub",
+  ownerLabel:"Owner",repoLabel:"Repo",branchLabel:"Branch",
+  targetTo:(o,r,b)=>`هيتنشر على ${o}/${r} @ ${b}`,
   download:"تحميل",delete:"حذف",
   dlStart:"بدأ التحميل",dlFail:"فشل التحميل",
   delConfirm:"حذف هذا المستند من هذا المتصفح؟",deleted:"تم الحذف",
@@ -380,9 +396,9 @@ ar:{
 /* Password gate: only PBKDF2 hash is stored (never the plaintext).
    Change password: node scripts/hash-password.mjs "YourNewPassword" then paste salt/hash below. */
 const AUTH={salt:"6064397b433e18ceea8fb81b405cec93",hash:"06fa93576df7d820d51e1c0d84b6c3323d39bcceee68c6e5c7a7f1f22decd3e2",iters:120000};
-/* Auto-publish via GitHub Contents API. Leave owner/repo empty to auto-detect on *.github.io */
+/* Defaults — leave empty to fill from the Upload form / auto-detect on github.io */
 const PUBLISH={owner:"",repo:"",branch:"main"};
-const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1",TKEY="docs-hub-gh-token";
+const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1",TKEY="docs-hub-gh-token",GKEY="docs-hub-gh-target";
 let pendingUpload=null;
 const t=k=>{const v=I18N[lang][k];return typeof v==="function"?v:v};
 const cats=()=>({backend:t("backend"),frontend:t("frontend"),"third-party":t("third-party")});
@@ -423,7 +439,7 @@ function toast(msg,bad){
   toast.t=setTimeout(()=>{
     el.classList.remove("on","bad");
     try{el.hidePopover?.()}catch{}
-  },2800);
+  },bad?5200:2800);
 }
 function countUp(el,to){const d=600,s=performance.now();(function f(n){const p=Math.min((n-s)/d,1);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s)}
 const mark=(name,q)=>{const e=esc(name);if(!q)return e;const i=name.toLowerCase().indexOf(q);return i<0?e:esc(name.slice(0,i))+"<mark>"+esc(name.slice(i,i+q.length))+"</mark>"+esc(name.slice(i+q.length))};
@@ -456,12 +472,56 @@ function applyChrome(){
   $("#c").value=prevCat||"backend";
   $("#cancel").textContent=t("cancel");
   $("#save").textContent=t("save");
-  $("#tokTitle").textContent=t("tokenTitle");
   $("#tokHint").textContent=t("tokenHint");
   $("#tok").placeholder=t("tokenPh");
-  $("#lblTok").firstChild.textContent=t("tokenLabel");
-  $("#tokCancel").textContent=t("cancel");
-  $("#tokSave").textContent=t("tokenSave");
+  $("#lblTok").childNodes[0].textContent=t("tokenLabel");
+  $("#lblOwner").firstChild.textContent=t("ownerLabel");
+  $("#lblRepo").firstChild.textContent=t("repoLabel");
+  $("#lblBranch").firstChild.textContent=t("branchLabel");
+  syncTokBox();
+}
+
+function savedTarget(){try{return JSON.parse(localStorage.getItem(GKEY)||"{}")}catch{return{}}}
+function saveTarget(o){localStorage.setItem(GKEY,JSON.stringify(o))}
+function detectTarget(){
+  const host=location.hostname;
+  if(host.endsWith(".github.io")){
+    const owner=host.slice(0,-".github.io".length);
+    const parts=location.pathname.split("/").filter(Boolean);
+    return{owner,repo:parts[0]||`${owner}.github.io`,branch:"main"};
+  }
+  return{owner:"",repo:"",branch:"main"};
+}
+function formTarget(){
+  return{
+    owner:($("#ghOwner").value||"").trim(),
+    repo:($("#ghRepo").value||"").trim(),
+    branch:($("#ghBranch").value||"").trim()||"main"
+  };
+}
+function ghTarget(){
+  const f=formTarget(),s=savedTarget(),d=detectTarget();
+  const owner=f.owner||PUBLISH.owner||s.owner||d.owner;
+  const repo=f.repo||PUBLISH.repo||s.repo||d.repo;
+  const branch=f.branch||PUBLISH.branch||s.branch||d.branch||"main";
+  if(owner&&repo)return{owner,repo,branch};
+  return null;
+}
+function fillTargetFields(){
+  const s=savedTarget(),d=detectTarget();
+  if(!$("#ghOwner").value)$("#ghOwner").value=PUBLISH.owner||s.owner||d.owner||"";
+  if(!$("#ghRepo").value)$("#ghRepo").value=PUBLISH.repo||s.repo||d.repo||"";
+  if(!$("#ghBranch").value)$("#ghBranch").value=PUBLISH.branch||s.branch||d.branch||"main";
+  updateTargetHint();
+}
+function updateTargetHint(){
+  const tgh=ghTarget();
+  $("#tokTarget").textContent=tgh?t("targetTo")(tgh.owner,tgh.repo,tgh.branch):t("needRepo");
+}
+function syncTokBox(){
+  $("#tokBox").classList.add("on");
+  fillTargetFields();
+  if(!$("#tok").value)$("#tok").value=getToken();
 }
 
 function setLang(next){
@@ -608,69 +668,101 @@ document.addEventListener("keydown",e=>{
   if(e.key==="/"&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();document.body.classList.add("menu");$("#q").focus()}
   if(e.key==="Escape"){$("#q").value="";nav();document.body.classList.remove("menu")}
 });
-$("#upBtn").onclick=()=>{$("#dlg").showModal()};
-$("#cancel").onclick=()=>{$("#dlg").close();pendingUpload=null};
+$("#upBtn").onclick=()=>{
+  $("#tokBox").classList.remove("need","needRepo");
+  syncTokBox();
+  $("#dlg").showModal();
+};
+$("#cancel").onclick=()=>{$("#dlg").close();pendingUpload=null;$("#tokBox").classList.remove("need","needRepo")};
 const pick=f=>{if(!f)return;const dt=new DataTransfer();dt.items.add(f);$("#f").files=dt.files;$("#fn").textContent=f.name};
 $("#f").onchange=e=>pick(e.target.files[0]);
 ["dragover","dragenter"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.add("over")}));
 ["dragleave","drop"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.remove("over");if(ev==="drop")pick(e.dataTransfer.files[0])}));
 
-const b64=str=>btoa(unescape(encodeURIComponent(str)));
+const b64=str=>{
+  const bytes=new TextEncoder().encode(str);
+  let bin="";const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(bin);
+};
 const slug=s=>(s.trim().toLowerCase().replace(/[_\s]+/g,"-").replace(/[^a-z0-9\u0600-\u06ff-]+/gi,"").replace(/-+/g,"-").replace(/^-|-$/g,"")||"doc");
-function ghTarget(){
-  if(PUBLISH.owner&&PUBLISH.repo)return{owner:PUBLISH.owner,repo:PUBLISH.repo,branch:PUBLISH.branch||"main"};
-  const host=location.hostname;
-  if(host.endsWith(".github.io")){
-    const owner=host.slice(0,-".github.io".length);
-    const parts=location.pathname.split("/").filter(Boolean);
-    return{owner,repo:parts[0]||`${owner}.github.io`,branch:PUBLISH.branch||"main"};
-  }
-  return null;
-}
 function getToken(){return localStorage.getItem(TKEY)||""}
 function setToken(v){v?localStorage.setItem(TKEY,v):localStorage.removeItem(TKEY)}
 
 async function publishToGitHub({html,base,name,cat,createdBy,token}){
   const target=ghTarget();
-  if(!target)throw new Error("repo");
+  if(!target)throw Object.assign(new Error("repo"),{code:"repo"});
+  saveTarget(target);
   const file=`${slug(base)}-${Date.now()}.html`;
   const path=`docs/${cat}/${file}`;
   const body=`<!-- docs-hub ${JSON.stringify({base,createdBy})} -->\n`+html;
-  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${path}`;
+  const headers={Accept:"application/vnd.github+json","Content-Type":"application/json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"};
+  // Verify repo access first for clearer errors
+  const check=await fetch(`https://api.github.com/repos/${target.owner}/${target.repo}`,{headers});
+  if(!check.ok){
+    const err=await check.json().catch(()=>({}));
+    const e=new Error(err.message||`HTTP ${check.status}`);
+    e.status=check.status;e.code=check.status===401||check.status===403?"auth":check.status===404?"notfound":"api";
+    throw e;
+  }
+  const url=`https://api.github.com/repos/${target.owner}/${target.repo}/contents/${encodeURIComponent(path).replace(/%2F/g,"/")}`;
   const res=await fetch(url,{
     method:"PUT",
-    headers:{Accept:"application/vnd.github+json","Content-Type":"application/json",Authorization:`Bearer ${token}`,"X-GitHub-Api-Version":"2022-11-28"},
+    headers,
     body:JSON.stringify({message:`docs: add ${name} (by ${createdBy})`,content:b64(body),branch:target.branch})
   });
   if(!res.ok){
     const err=await res.json().catch(()=>({}));
-    throw new Error(err.message||String(res.status));
+    const detail=err.message||(err.errors&&err.errors.map(x=>x.message).join("; "))||`HTTP ${res.status}`;
+    const e=new Error(detail);
+    e.status=res.status;e.code=res.status===401||res.status===403?"auth":"api";
+    throw e;
   }
-  return{path,file,url:`docs/${cat}/${encodeURI(file)}`};
+  return{path,file,url:`docs/${cat}/${encodeURI(file)}`,target};
 }
 
 async function saveLocal({html,base,cat,createdBy,name,extra={}}){
   const doc={id:extra.id||("local/"+Date.now()),base,name:name||versioned(base,cat),cat,createdBy,html,added:new Date().toISOString(),local:true,...extra};
   await tx("readwrite",s=>s.put(doc));local.push(doc);
-  $("#dlg").close();$("#tokDlg").close();
-  $("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");$("#tok").value="";
+  $("#dlg").close();
+  $("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");
+  $("#tokBox").classList.remove("need","needRepo");
   pendingUpload=null;
   go(doc.id);
   return doc;
 }
 
+function focusToken(bad){
+  $("#tokBox").classList.add("on");
+  if(bad)$("#tokBox").classList.add("need");
+  $("#tok").focus();
+  try{$("#tok").select()}catch{}
+}
+
 async function finishUpload(payload){
   const{html,base,cat,createdBy,token}=payload;
   const name=versioned(base,cat);
-  $("#save").disabled=true;$("#tokSave").disabled=true;toast(t("publishing"));
+  $("#save").disabled=true;toast(t("publishing"));
   try{
     const pub=await publishToGitHub({html,base,name,cat,createdBy,token});
+    setToken(token);
     const doc=await saveLocal({html,base,cat,createdBy,name,extra:{id:`${cat}/${pub.file}`,url:pub.url}});
     toast(t("publishOk")(doc.name));
   }catch(e){
-    if(String(e.message||e)==="repo")toast(t("needRepo"),1);
-    else{toast(t("publishFail"),1);if(/Bad credentials|401|403|Requires authentication/i.test(String(e.message||e))){setToken("");$("#tokDlg").showModal()}}
-  }finally{$("#save").disabled=false;$("#tokSave").disabled=false}
+    const msg=String(e.message||e);
+    const code=e.code||"";
+    if(code==="repo"||msg==="repo"){
+      toast(t("needRepo"),1);
+      $("#tokBox").classList.add("needRepo");
+      $("#ghOwner").focus();
+    }else{
+      toast(t("publishErr")(msg),1);
+      if(!$("#dlg").open)$("#dlg").showModal();
+      if(code==="auth"){setToken("");$("#tok").value="";focusToken(1)}
+      else if(code==="notfound"){$("#tokBox").classList.add("needRepo");$("#ghRepo").focus()}
+      else focusToken(0);
+    }
+  }finally{$("#save").disabled=false}
 }
 
 $("#save").onclick=async()=>{
@@ -679,22 +771,26 @@ $("#save").onclick=async()=>{
   const cat=$("#c").value,base=$("#n").value.trim()||file.name.replace(/\.html?$/i,"").replace(/[-_]+/g," ");
   const html=await file.text();
   pendingUpload={html,base,cat,createdBy};
-  if(!ghTarget()){
-    const doc=await saveLocal(pendingUpload);
-    toast(t("uploaded")(doc.name));
+  updateTargetHint();
+  const target=ghTarget();
+  if(!target){
+    toast(t("needRepo"),1);
+    $("#tokBox").classList.add("needRepo");
+    $("#ghOwner").focus();
     return;
   }
-  const token=getToken();
-  if(!token){$("#dlg").close();$("#tokDlg").showModal();$("#tok").focus();return}
+  saveTarget(target);
+  const token=$("#tok").value.trim();
+  if(!token){toast(t("tokenNeed"),1);focusToken(1);return}
   await finishUpload({...pendingUpload,token});
 };
-$("#tokCancel").onclick=()=>{$("#tokDlg").close();pendingUpload=null;$("#dlg").showModal()};
-$("#tokSave").onclick=async()=>{
-  const token=$("#tok").value.trim();if(!token)return toast(t("tokenNeed"),1);
-  if(!pendingUpload)return $("#tokDlg").close();
-  setToken(token);
-  await finishUpload({...pendingUpload,token});
-};
+["input","change"].forEach(ev=>{
+  $("#tok").addEventListener(ev,()=>$("#tokBox").classList.remove("need"));
+  ["ghOwner","ghRepo","ghBranch"].forEach(id=>$("#"+id).addEventListener(ev,()=>{
+    $("#tokBox").classList.remove("needRepo");
+    updateTargetHint();
+  }));
+});
 $("#gateForm").onsubmit=async e=>{
   e.preventDefault();
   const ok=await tryUnlock($("#pw").value);
