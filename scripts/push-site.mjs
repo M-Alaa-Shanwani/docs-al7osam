@@ -1,4 +1,4 @@
-// Rebuild docs.json from GitHub files and push docs.json + index.html
+// Rebuild docs.json from GitHub files and push site files so Pages lists docs/
 // Usage: node scripts/push-site.mjs ghp_YOUR_TOKEN
 import fs from "node:fs";
 
@@ -64,7 +64,7 @@ async function buildManifest() {
       let meta = {};
       const m = raw.match(/<!--\s*docs-hub\s*(\{[\s\S]*?\})\s*-->/);
       if (m) { try { meta = JSON.parse(m[1]); } catch {} }
-      const base = String(meta.base || f.name.replace(/\.html$/, "").replace(/-\d{10,}$/, "").replace(/[-_]+/g, " ")).trim();
+      const base = String(meta.base || f.name.replace(/\.html?$/i, "").replace(/-\d{10,}$/, "").replace(/[-_]+/g, " ")).trim();
       const key = cat + "|" + base;
       const n = seen[key] = (seen[key] ?? -1) + 1;
       const row = {
@@ -86,6 +86,13 @@ const list = await buildManifest();
 const json = JSON.stringify(list, null, 2) + "\n";
 fs.writeFileSync("docs.json", json);
 console.log(`docs.json: ${list.length} docs`);
-await putFile("docs.json", json, "docs: rebuild manifest from uploaded files");
-await putFile("index.html", fs.readFileSync("index.html", "utf8"), "docs: sync hub app for cross-device listing");
+await putFile("docs.json", json, "docs: rebuild manifest from docs/ folder");
+await putFile(".nojekyll", "", "docs: disable Jekyll for Pages");
+await putFile("index.html", fs.readFileSync("index.html", "utf8"), "docs: sync hub app (list from docs/)");
+if (fs.existsSync(".github/workflows/pages.yml")) {
+  await putFile(".github/workflows/pages.yml", fs.readFileSync(".github/workflows/pages.yml", "utf8"), "docs: Pages workflow rebuilds from docs/");
+}
+if (fs.existsSync("scripts/build-manifest.mjs")) {
+  await putFile("scripts/build-manifest.mjs", fs.readFileSync("scripts/build-manifest.mjs", "utf8"), "docs: update build-manifest");
+}
 console.log("Done. Hard-refresh the site on every device.");

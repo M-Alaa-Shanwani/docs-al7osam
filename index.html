@@ -1043,17 +1043,21 @@ async function finishUpload(payload){
   try{
     const pub=await publishToGitHub({html,base,name,cat,createdBy,token});
     setToken(token);
-    // Shared list (visible on every device after refresh) + keep html for instant open here
-    const entry={...pub.entry,html,base};
-    repo=repo.filter(d=>d.id!==entry.id).concat(entry);
-    local=local.filter(d=>d.id!==entry.id);
-    try{await tx("readwrite",s=>s.delete(entry.id))}catch{}
+    // Shared list from docs/ folder
+    if(Array.isArray(pub.list)&&pub.list.length){
+      repo=pub.list.map(d=>({...d,base:d.base||d.name.replace(/ v\d+$/,""),...(d.id===pub.entry.id?{html}:{})}));
+    }else{
+      const entry={...pub.entry,html,base};
+      repo=repo.filter(d=>d.id!==entry.id).concat(entry);
+    }
+    local=local.filter(d=>d.id!==pub.entry.id);
+    try{await tx("readwrite",s=>s.delete(pub.entry.id))}catch{}
     $("#dlg").close();
     $("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");
     $("#tokBox").classList.remove("need","needRepo");
     pendingUpload=null;
-    go(entry.id);
-    toast(t("publishOk")(entry.name));
+    go(pub.entry.id);
+    toast(t("publishOk")(pub.entry.name));
   }catch(e){
     const msg=String(e.message||e);
     const code=e.code||"";
