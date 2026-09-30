@@ -115,8 +115,15 @@ dialog .req{color:#e5484d;margin-inline-start:.2rem}
 .drop{display:block;text-align:center;border:2px dashed var(--line);border-radius:14px;padding:1.4rem;margin-bottom:.9rem;color:var(--mist);transition:border-color .2s,background .2s}
 .drop.over,.drop:hover{border-color:var(--accent);background:var(--tint)}.drop input{display:none}.drop b{color:var(--ink);display:block;margin-top:.2rem}
 .acts{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
-#toast{position:fixed;bottom:max(1.4rem,env(safe-area-inset-bottom,0));left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:.7rem 1.2rem;border-radius:12px;opacity:0;pointer-events:none;transition:.35s var(--ease);z-index:120;box-shadow:var(--sh);max-width:min(92vw,420px);text-align:center;font-size:.92rem}
-#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast{
+  position:fixed;inset:unset;top:max(1rem,env(safe-area-inset-top,0));left:50%;right:auto;bottom:auto;
+  transform:translate(-50%,-14px);margin:0;border:0;width:max-content;max-width:min(92vw,440px);
+  background:var(--ink);color:var(--paper);padding:.75rem 1.2rem;border-radius:12px;opacity:0;
+  pointer-events:none;transition:opacity .35s var(--ease),transform .35s var(--ease);z-index:2147483646;
+  box-shadow:0 12px 40px #0006;text-align:center;font-size:.92rem;line-height:1.4
+}
+#toast.on,#toast:popover-open{opacity:1;transform:translate(-50%,0)}
+#toast.bad{background:#b42318;color:#fff}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* icons + life */
@@ -209,8 +216,8 @@ body.locked #gate{display:grid}
   .steps,.rules{grid-template-columns:1fr}
   .drop{padding:1.1rem .8rem}
   .code{padding:.85rem 3rem .85rem .85rem}
-  #toast{bottom:max(1rem,env(safe-area-inset-bottom));left:max(.75rem,env(safe-area-inset-left));right:max(.75rem,env(safe-area-inset-right));width:auto;transform:translateY(30px)}
-  #toast.on{transform:translateY(0)}
+  #toast{left:max(.75rem,env(safe-area-inset-left));right:max(.75rem,env(safe-area-inset-right));width:auto;max-width:none;transform:translateY(-14px)}
+  #toast.on,#toast:popover-open{transform:translateY(0)}
   .brand{padding:1rem}
   .up,.out{margin-inline:.85rem}
   .lang{margin-inline:.85rem}
@@ -279,7 +286,7 @@ body.locked #gate{display:grid}
   <label id="lblTok">Token<input id="tok" type="password" autocomplete="off" spellcheck="false"></label>
   <div class="acts"><button class="btn" id="tokCancel">Cancel</button><button class="btn p" id="tokSave">Save & publish</button></div>
 </dialog>
-<div id="toast" role="status"></div>
+<div id="toast" role="status" popover="manual"></div>
 
 <script>
 const $=s=>document.querySelector(s);
@@ -406,7 +413,18 @@ const versioned=(name,cat)=>{const n=all().filter(d=>d.cat===cat&&d.base===name)
 const locale=()=>lang==="ar"?"ar":"en";
 const fmtDate=d=>new Date(d).toLocaleDateString(locale());
 
-function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),2600)}
+function toast(msg,bad){
+  const el=$("#toast");
+  el.textContent=msg;
+  el.classList.toggle("bad",!!bad);
+  el.classList.add("on");
+  try{if(typeof el.showPopover==="function")el.showPopover()}catch{try{el.hidePopover();el.showPopover()}catch{}}
+  clearTimeout(toast.t);
+  toast.t=setTimeout(()=>{
+    el.classList.remove("on","bad");
+    try{el.hidePopover?.()}catch{}
+  },2800);
+}
 function countUp(el,to){const d=600,s=performance.now();(function f(n){const p=Math.min((n-s)/d,1);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s)}
 const mark=(name,q)=>{const e=esc(name);if(!q)return e;const i=name.toLowerCase().indexOf(q);return i<0?e:esc(name.slice(0,i))+"<mark>"+esc(name.slice(i,i+q.length))+"</mark>"+esc(name.slice(i+q.length))};
 
@@ -566,7 +584,7 @@ function docView(d){
   d.local?fr.srcdoc=d.html:fr.src=d.url;
   $("#dl").onclick=async()=>{
     try{const html=d.local?d.html:await (await fetch(d.url)).text();
-    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=d.name.replace(/\s+/g,"-")+".html";a.click();URL.revokeObjectURL(a.href);toast(t("dlStart"))}catch{toast(t("dlFail"))}
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=d.name.replace(/\s+/g,"-")+".html";a.click();URL.revokeObjectURL(a.href);toast(t("dlStart"))}catch{toast(t("dlFail"),1)}
   };
   if(d.local)$("#rm").onclick=async()=>{if(!confirm(t("delConfirm")))return;await tx("readwrite",s=>s.delete(d.id));local=local.filter(x=>x.id!==d.id);closeTab(d.id);toast(t("deleted"))};
 }
@@ -650,14 +668,14 @@ async function finishUpload(payload){
     const doc=await saveLocal({html,base,cat,createdBy,name,extra:{id:`${cat}/${pub.file}`,url:pub.url}});
     toast(t("publishOk")(doc.name));
   }catch(e){
-    if(String(e.message||e)==="repo")toast(t("needRepo"));
-    else{toast(t("publishFail"));if(/Bad credentials|401|403|Requires authentication/i.test(String(e.message||e))){setToken("");$("#tokDlg").showModal()}}
+    if(String(e.message||e)==="repo")toast(t("needRepo"),1);
+    else{toast(t("publishFail"),1);if(/Bad credentials|401|403|Requires authentication/i.test(String(e.message||e))){setToken("");$("#tokDlg").showModal()}}
   }finally{$("#save").disabled=false;$("#tokSave").disabled=false}
 }
 
 $("#save").onclick=async()=>{
-  const file=$("#f").files[0];if(!file)return toast(t("needFile"));
-  const createdBy=$("#author").value.trim();if(!createdBy)return toast(t("needAuthor"));
+  const file=$("#f").files[0];if(!file)return toast(t("needFile"),1);
+  const createdBy=$("#author").value.trim();if(!createdBy)return toast(t("needAuthor"),1);
   const cat=$("#c").value,base=$("#n").value.trim()||file.name.replace(/\.html?$/i,"").replace(/[-_]+/g," ");
   const html=await file.text();
   pendingUpload={html,base,cat,createdBy};
@@ -672,7 +690,7 @@ $("#save").onclick=async()=>{
 };
 $("#tokCancel").onclick=()=>{$("#tokDlg").close();pendingUpload=null;$("#dlg").showModal()};
 $("#tokSave").onclick=async()=>{
-  const token=$("#tok").value.trim();if(!token)return toast(t("tokenNeed"));
+  const token=$("#tok").value.trim();if(!token)return toast(t("tokenNeed"),1);
   if(!pendingUpload)return $("#tokDlg").close();
   setToken(token);
   await finishUpload({...pendingUpload,token});
