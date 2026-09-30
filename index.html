@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Docs Hub · dev-al7osam</title>
+<link rel="icon" href="assets/logo.jpg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--ink:#1a1240;--side:#1d1b4a;--side2:#12102f;--mist:#6a6a80;--line:#e0e0ee;--paper:#f5f5fb;--card:#fff;--accent:#4b3fd1;--tint:#ececfb;
+--c-backend:#4b3fd1;--c-frontend:#0f9d8a;--c-third-party:#d9822b;
+--font:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,sans-serif;--ease:cubic-bezier(.2,.8,.2,1);--sh:0 1px 2px #1a124010,0 8px 24px #1a124012}
+[dir=rtl]{--font:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif}
+@media(prefers-color-scheme:dark){:root{--ink:#ececf8;--side:#15133a;--side2:#0d0b25;--mist:#9a9ab5;--line:#2b2950;--paper:#0f0d24;--card:#1a1740;--accent:#8f86ff;--tint:#25225a;--c-backend:#8f86ff;--c-frontend:#3fd0bb;--c-third-party:#f0a259;--sh:0 8px 24px #0006}}
+*{box-sizing:border-box}html,body{height:100%;height:100dvh;margin:0;max-width:100%}
+body{font-family:var(--font);background:var(--paper);color:var(--ink);display:flex;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+img,svg,iframe{max-width:100%}
+/* splash */
+#splash{position:fixed;inset:0;z-index:99;background:linear-gradient(160deg,var(--side),var(--side2));display:grid;place-items:center;transition:opacity .5s var(--ease),visibility .5s}
+#splash.off{opacity:0;visibility:hidden}
+#splash .in{text-align:center;color:#fff}
+#splash img{width:84px;height:84px;border-radius:50%;background:#fff;object-fit:cover;animation:pulse 1.6s ease-in-out infinite}
+#splash b{display:block;margin:1rem 0 .2rem;font-size:1.3rem;font-weight:600}
+#splash small{color:#b9b9d8}
+.ld{width:140px;height:3px;border-radius:3px;background:#ffffff26;margin:1.2rem auto 0;overflow:hidden}
+.ld::after{content:"";display:block;width:40%;height:100%;background:#fff;border-radius:3px;animation:slide 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #8f86ff66}50%{transform:scale(1.06);box-shadow:0 0 0 18px #8f86ff00}}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(350%)}}
+/* sidebar */
+aside{width:min(290px,100%);background:linear-gradient(180deg,var(--side),var(--side2));color:#e6e6f5;display:flex;flex-direction:column;flex-shrink:0;z-index:20;transition:transform .35s var(--ease);padding-bottom:env(safe-area-inset-bottom,0)}
+.brand{display:flex;align-items:center;gap:.75rem;padding:1.2rem 1.2rem .9rem;border:0;background:none;text-align:start;width:100%}
+.brand img{width:42px;height:42px;border-radius:50%;background:#fff;object-fit:cover;transition:transform .4s var(--ease)}
+.brand:hover img{transform:rotate(-8deg) scale(1.06)}
+.brand b{display:block;font-weight:600;font-size:1.05rem;color:#fff}.brand small{color:#b9b9d8;font-size:.78rem}
+.lang{display:flex;gap:4px;margin:0 1rem .7rem;padding:3px;border-radius:10px;background:#ffffff12;border:1px solid #ffffff22}
+.lang button{flex:1;border:0;background:transparent;color:#b9b9d8;padding:.4rem .5rem;border-radius:8px;font-size:.82rem;font-weight:500;transition:background .2s,color .2s}
+.lang button.on{background:#fff;color:#1a1240;font-weight:600}.lang button:hover:not(.on){color:#fff;background:#ffffff14}
+.sw{position:relative;margin:.2rem 1rem .6rem}
+#q{width:100%;padding:.6rem 2.2rem .6rem .8rem;border-radius:10px;border:1px solid #ffffff26;background:#ffffff12;color:#fff;font:inherit;font-size:16px;transition:background .2s,border-color .2s}
+[dir=rtl] #q{padding:.6rem .8rem .6rem 2.2rem}
+#q:focus{background:#ffffff1f;border-color:#ffffff66;outline:0}#q::placeholder{color:#b9b9d8}
+.sw kbd{position:absolute;inset-inline-end:.6rem;top:50%;transform:translateY(-50%);font:.72rem var(--font);color:#b9b9d8;border:1px solid #ffffff33;border-radius:5px;padding:0 .35rem}
+nav{overflow:auto;flex:1;padding:0 .6rem 1rem;scrollbar-width:thin}
+.grp{display:flex;align-items:center;gap:.5rem;width:100%;border:0;background:none;color:#b9b9d8;font-size:.82rem;font-weight:500;padding:.8rem .6rem .3rem;text-align:start}
+.grp i{width:8px;height:8px;border-radius:50%;background:var(--g)}
+.grp em{margin-inline-start:auto;font-style:normal;background:#ffffff1a;border-radius:20px;padding:0 .5rem;font-size:.75rem}
+.grp svg{transition:transform .25s var(--ease)}.grp.shut svg{transform:rotate(-90deg)}
+[dir=rtl] .grp.shut svg{transform:rotate(90deg)}
+.items{display:grid;grid-template-rows:1fr;transition:grid-template-rows .3s var(--ease)}.items>div{overflow:hidden}.items.shut{grid-template-rows:0fr}
+.item{display:block;width:100%;text-align:start;background:none;border:0;padding:.5rem .7rem;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;transition:background .2s,padding .25s var(--ease)}
+.item:hover{background:#ffffff14;padding-inline-start:1rem}.item.on{background:#ffffff26;color:#fff}
+.item.on::before{content:"";position:absolute;inset-inline-start:0;top:20%;bottom:20%;width:3px;border-radius:3px;background:var(--g)}
+.item mark{background:#ffd76a;color:#1a1240;border-radius:3px}
+.none{padding:.6rem;color:#b9b9d8;font-size:.85rem}
+.up{margin:.6rem 1rem .5rem;padding:.7rem;border-radius:10px;border:0;background:#fff;color:#1a1240;font-weight:600;transition:transform .2s var(--ease),box-shadow .2s}
+.up:hover{transform:translateY(-2px);box-shadow:0 8px 20px #0005}.up:active{transform:none}
+.by{padding:.2rem 1rem 1rem;text-align:center;color:#9a9ac0;font-size:.78rem}.by b{color:#fff;font-weight:600}
+/* main */
+main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;width:100%}
+.top{display:none;align-items:center;gap:.7rem;padding:.55rem 1rem;padding-top:max(.55rem,env(safe-area-inset-top,0));background:var(--card);border-bottom:1px solid var(--line);flex-shrink:0}
+.top button{border:0;background:none;font-size:1.4rem;line-height:1;min-width:44px;min-height:44px;display:grid;place-items:center;border-radius:10px}
+.top b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tabs{display:flex;gap:4px;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto;padding:.4rem .6rem 0;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}
+.tab{display:flex;align-items:center;gap:.5rem;padding:.6rem .9rem;border:0;background:none;color:var(--mist);border-radius:10px 10px 0 0;white-space:nowrap;position:relative;animation:tabin .3s var(--ease);transition:background .2s,color .2s;flex-shrink:0;max-width:min(220px,70vw);overflow:hidden;text-overflow:ellipsis}
+.tab:hover{background:var(--tint)}.tab.on{color:var(--ink);background:var(--paper)}
+.tab.on::after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:2px;background:var(--accent);border-radius:2px}
+.tab s{text-decoration:none;width:18px;height:18px;line-height:17px;text-align:center;border-radius:50%;opacity:.55}.tab s:hover{opacity:1;background:var(--line)}
+@keyframes tabin{from{opacity:0;transform:translateY(6px) scale(.96)}}
+#view{flex:1;overflow:auto;min-height:0;position:relative}
+.enter{animation:enter .35s var(--ease)}@keyframes enter{from{opacity:0;transform:translateY(10px)}}
+/* home */
+.hero{position:relative;overflow:hidden;color:#fff;padding:clamp(1.4rem,4vw,2.6rem) clamp(1rem,4vw,2.2rem) clamp(2.8rem,6vw,4.2rem);background:linear-gradient(135deg,#2a2a5a,#4b3fd1 70%,#6b5df0)}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;filter:blur(50px);opacity:.5;animation:float 9s ease-in-out infinite}
+.hero::before{width:min(260px,55vw);height:min(260px,55vw);background:#8f86ff;inset-inline-end:-60px;top:-80px}
+.hero::after{width:min(200px,45vw);height:min(200px,45vw);background:#0f9d8a;inset-inline-start:30%;bottom:-120px;animation-delay:-4s}
+@keyframes float{50%{transform:translate(-30px,20px) scale(1.15)}}
+.hero>*{position:relative;z-index:1}
+.hero img{width:clamp(48px,12vw,64px);height:clamp(48px,12vw,64px);border-radius:50%;background:#fff;object-fit:cover;margin-bottom:1rem;box-shadow:0 0 0 6px #ffffff26}
+.hero h1{margin:0 0 .4rem;font-size:clamp(1.35rem,4.5vw,2rem);font-weight:700;letter-spacing:-.01em;line-height:1.25;max-width:18ch}
+.hero p{margin:0;color:#dcdcff;max-width:52ch;font-size:clamp(.9rem,2.8vw,1rem);line-height:1.5}
+.body{padding:0 clamp(1rem,4vw,2.2rem) clamp(1.5rem,4vw,2.5rem);margin-top:clamp(-2rem,-5vw,-2.6rem);max-width:1040px;width:100%;position:relative;margin-inline:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:.85rem;margin-bottom:1.6rem}
+.stat{background:var(--card);border-radius:14px;padding:1.1rem 1.2rem;box-shadow:var(--sh);border:1px solid var(--line);border-top:3px solid var(--g,var(--accent));text-align:start;transition:transform .25s var(--ease),box-shadow .25s;animation:enter .5s var(--ease) both;animation-delay:calc(var(--i)*70ms)}
+button.stat:hover{transform:translateY(-4px)}
+.stat b{display:block;font-size:clamp(1.6rem,5vw,2.1rem);font-weight:700;color:var(--g,var(--accent));font-variant-numeric:tabular-nums}.stat span{color:var(--mist);font-size:.9rem}
+.body h2{font-size:1.05rem;margin:0 0 .7rem}
+.row{display:flex;justify-content:space-between;align-items:center;gap:.75rem 1rem;width:100%;text-align:start;background:var(--card);border:1px solid var(--line);padding:.8rem 1rem;margin-bottom:.5rem;border-radius:12px;transition:transform .2s var(--ease),border-color .2s;animation:enter .5s var(--ease) both;animation-delay:calc(var(--i)*60ms + 250ms);flex-wrap:wrap}
+.row:hover{transform:translateX(4px);border-color:var(--accent)}
+[dir=rtl] .row:hover{transform:translateX(-4px)}
+.row small{color:var(--mist);white-space:nowrap}.row .dot{display:grid;place-items:center;font-style:normal;flex-shrink:0}.row span{flex:1;min-width:0;display:flex;align-items:center;gap:.7rem;overflow:hidden;text-overflow:ellipsis}
+.empty{background:var(--card);border:2px dashed var(--line);border-radius:14px;padding:clamp(1.2rem,4vw,2rem);text-align:center;color:var(--mist)}
+.sk{border-radius:12px;background:linear-gradient(90deg,var(--line) 25%,var(--tint) 50%,var(--line) 75%);background-size:200% 100%;animation:shimmer 1.2s linear infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+/* doc */
+.doc{display:flex;flex-direction:column;height:100%;min-height:0}
+.bar{display:flex;align-items:center;gap:.5rem;padding:.55rem clamp(.7rem,3vw,1rem);background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap;flex-shrink:0}
+.bar .meta{flex:1;min-width:min(100%,140px);display:flex;flex-direction:column;gap:.15rem}
+.bar .meta span{color:var(--mist);font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .meta .author{color:var(--ink);font-size:.82rem;font-weight:500}
+.bar .meta .author em{color:var(--mist);font-style:normal;font-weight:400}
+.bar .btn{flex-shrink:0}
+.btn{padding:.45rem .85rem;border-radius:9px;border:1px solid var(--line);background:var(--card);transition:transform .15s,background .2s;min-height:40px}
+.btn:hover{background:var(--tint)}.btn:active{transform:scale(.96)}.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}.btn.d:hover{background:#e5484d22;border-color:#e5484d}
+.fw{flex:1;position:relative;min-height:0}iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;opacity:0;transition:opacity .4s}
+iframe.ok{opacity:1}.spin{position:absolute;inset:0;display:grid;place-items:center;transition:opacity .3s}
+.spin i{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:rot .8s linear infinite}@keyframes rot{to{transform:rotate(1turn)}}
+/* dialog + toast */
+dialog{border:0;border-radius:18px;background:var(--card);color:var(--ink);padding:clamp(1.1rem,3vw,1.5rem);width:min(440px,calc(100vw - 1.5rem));max-height:min(90dvh,920px);overflow:auto;box-shadow:0 30px 80px #0007;margin:auto}
+dialog[open]{animation:pop .3s var(--ease)}dialog::backdrop{background:#0a0820aa;backdrop-filter:blur(3px);animation:fade .3s}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.95)}}@keyframes fade{from{opacity:0}}
+dialog h3{margin:0 0 1rem}dialog label{display:block;margin-bottom:.9rem;font-size:.88rem;color:var(--mist)}
+dialog input,dialog select{display:block;width:100%;margin-top:.35rem;padding:.65rem;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}
+dialog .req{color:#e5484d;margin-inline-start:.2rem}
+.drop{display:block;text-align:center;border:2px dashed var(--line);border-radius:14px;padding:1.4rem;margin-bottom:.9rem;color:var(--mist);transition:border-color .2s,background .2s}
+.drop.over,.drop:hover{border-color:var(--accent);background:var(--tint)}.drop input{display:none}.drop b{color:var(--ink);display:block;margin-top:.2rem}
+.acts{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
+#toast{position:fixed;bottom:max(1.4rem,env(safe-area-inset-bottom,0));left:50%;transform:translate(-50%,30px);background:var(--ink);color:var(--paper);padding:.7rem 1.2rem;border-radius:12px;opacity:0;pointer-events:none;transition:.35s var(--ease);z-index:120;box-shadow:var(--sh);max-width:min(92vw,420px);text-align:center;font-size:.92rem}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* icons + life */
+.ic{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;vertical-align:-.2em}
+.grp .ic{color:var(--g);width:15px;height:15px}
+.hero img{position:relative}
+.ring{position:relative;display:inline-block;margin-bottom:1rem}.ring img{margin:0;display:block}
+.ring::before{content:"";position:absolute;inset:-7px;border-radius:50%;background:conic-gradient(from 0deg,#fff,#8f86ff00 40%,#3fd0bb,#8f86ff00 80%,#fff);animation:rot 4s linear infinite;-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,#0000 calc(100% - 3px),#000 calc(100% - 2px))}
+.live{display:inline-flex;align-items:center;gap:.45rem;background:#ffffff1f;border:1px solid #ffffff33;border-radius:20px;padding:.2rem .7rem;font-size:.8rem;margin-inline-start:.5rem;vertical-align:middle}
+.live i{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:ping 1.6s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 #4ade8099}100%{box-shadow:0 0 0 10px #4ade8000}}
+.typer{color:#fff;font-weight:600;border-inline-end:2px solid #fff;padding-inline-end:3px;animation:caret .8s steps(1) infinite}
+@keyframes caret{50%{border-color:transparent}}
+.fl{position:absolute;color:#ffffff40;animation:bob 6s ease-in-out infinite;z-index:0}.fl .ic{width:100%;height:100%;stroke-width:1.4}
+@keyframes bob{50%{transform:translateY(-16px) rotate(8deg)}}
+.stat .ic,.row .ic{transition:transform .35s var(--ease)}
+.stat .top-i{display:flex;justify-content:space-between;align-items:center;color:var(--g,var(--accent));margin-bottom:.4rem}
+.stat .top-i .ic{width:26px;height:26px;padding:4px;border-radius:9px;background:color-mix(in srgb,var(--g,var(--accent)) 14%,transparent);box-sizing:content-box}
+button.stat:hover .ic,.row:hover .ic{transform:rotate(-12deg) scale(1.2)}
+.stat,.step,.rule,.row{background-image:radial-gradient(220px circle at var(--mx,-99px) var(--my,-99px),color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)}
+.body h2{display:flex;align-items:center;gap:.5rem;margin-top:.4rem}.body h2 .ic{color:var(--accent)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:1rem;margin-bottom:1.4rem;position:relative}
+.step{background-color:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.1rem;position:relative;box-shadow:var(--sh);animation:enter .5s var(--ease) both;animation-delay:calc(var(--i)*110ms + 200ms);transition:transform .25s var(--ease)}
+.step:hover{transform:translateY(-4px)}
+.step .n{position:absolute;top:-11px;inset-inline-start:14px;background:var(--accent);color:#fff;font-size:.78rem;font-weight:700;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;animation:popn .5s var(--ease) both;animation-delay:calc(var(--i)*110ms + 400ms)}
+@keyframes popn{from{transform:scale(0)}}
+.step .ic{width:30px;height:30px;color:var(--accent);margin-bottom:.5rem}.step:hover .ic{animation:wig .6s}
+@keyframes wig{25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+.step b{display:block;margin-bottom:.25rem}.step p{margin:0;color:var(--mist);font-size:.88rem;line-height:1.5}
+.code{position:relative;background:#12102f;color:#d8d8ff;border-radius:12px;padding:1rem 3.4rem 1rem 1rem;font:clamp(.75rem,2.5vw,.85rem)/1.7 ui-monospace,Menlo,Consolas,monospace;margin-bottom:1.4rem;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:pre;direction:ltr;text-align:left;max-width:100%}
+.code .cm{color:#7c7ca8}.code button{position:absolute;top:.6rem;inset-inline-end:.6rem;border:1px solid #ffffff33;background:#ffffff14;color:#fff;border-radius:8px;padding:.25rem .5rem;transition:background .2s}
+.code button:hover{background:#ffffff2b}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:.6rem;margin-bottom:1.6rem}
+.rule{background-color:var(--card);border:1px solid var(--line);border-radius:12px;padding:.8rem 1rem;display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;line-height:1.5;animation:enter .5s var(--ease) both;animation-delay:calc(var(--i)*70ms + 500ms)}
+.rule .ic{color:var(--c-frontend);margin-top:.15rem}.rule.warn .ic{color:var(--c-third-party)}
+.rule code{background:var(--tint);padding:0 .35rem;border-radius:5px;font-size:.85em}
+.scrim{display:none}
+.out{margin:.2rem 1rem .8rem;padding:.55rem;border-radius:10px;border:1px solid #ffffff26;background:transparent;color:#cfcfe8;font-size:.82rem;font-weight:500;transition:background .2s}
+.out:hover{background:#ffffff14}
+/* gate */
+body.locked>aside,body.locked>main,#splash.hold{visibility:hidden;pointer-events:none}
+#gate{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,var(--side),var(--side2));display:none;place-items:center;padding:max(1rem,env(safe-area-inset-top)) max(1rem,env(safe-area-inset-right)) max(1rem,env(safe-area-inset-bottom)) max(1rem,env(safe-area-inset-left));overflow:auto}
+body.locked #gate{display:grid}
+#gate .card{width:min(380px,100%);background:var(--card);color:var(--ink);border-radius:18px;padding:clamp(1.2rem,4vw,1.6rem);box-shadow:0 30px 80px #0007;animation:pop .35s var(--ease);margin:auto}
+#gate .head{text-align:center;margin-bottom:1.2rem}
+#gate .head img{width:clamp(52px,14vw,64px);height:clamp(52px,14vw,64px);border-radius:50%;object-fit:cover;background:#fff;box-shadow:0 0 0 5px #4b3fd126}
+#gate .head b{display:block;margin-top:.85rem;font-size:clamp(1.05rem,4vw,1.15rem)}
+#gate .head p{margin:.35rem 0 0;color:var(--mist);font-size:.9rem}
+#gate label{display:block;font-size:.88rem;color:var(--mist);margin-bottom:.9rem}
+#gate input{display:block;width:100%;margin-top:.35rem;padding:.75rem .8rem;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}
+#gate input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+#gate .err{min-height:1.2em;color:#e5484d;font-size:.85rem;margin:-.3rem 0 .7rem}
+#gate .go{width:100%;padding:.8rem;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;transition:transform .15s,opacity .2s;min-height:46px}
+#gate .go:hover{transform:translateY(-1px)}#gate .go:disabled{opacity:.55;cursor:not-allowed;transform:none}
+#gate .glang{display:flex;gap:4px;margin-bottom:1rem;padding:3px;border-radius:10px;background:var(--tint);border:1px solid var(--line)}
+#gate .glang button{flex:1;border:0;background:transparent;color:var(--mist);padding:.45rem;border-radius:8px;font-size:.82rem;font-weight:500;min-height:40px}
+#gate .glang button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:var(--sh)}
+
+/* tablet / laptop narrow */
+@media(max-width:1100px){
+  aside{width:260px}
+  .stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
+}
+/* mobile + small tablet */
+@media(max-width:900px){
+  body{flex-direction:column}
+  .top{display:flex}
+  aside{
+    position:fixed;inset:0 auto 0 0;width:min(300px,88vw);height:100%;height:100dvh;
+    transform:translateX(-102%);box-shadow:none;padding-top:env(safe-area-inset-top,0)
+  }
+  [dir=rtl] aside{inset:0 0 0 auto;transform:translateX(102%)}
+  body.menu aside{transform:none;box-shadow:12px 0 40px #0005}
+  [dir=rtl] body.menu aside{box-shadow:-12px 0 40px #0005}
+  body.menu .scrim{display:block;position:fixed;inset:0;background:#0008;z-index:10;animation:fade .3s}
+  .sw kbd{display:none}
+  .fl{display:none}
+  .hero h1{max-width:none}
+  .live{display:flex;width:fit-content;margin:.35rem 0 .75rem;margin-inline-start:0}
+  .tab{padding:.55rem .75rem;font-size:.92rem;max-width:min(180px,55vw)}
+  .row{align-items:flex-start}
+  .row>small{width:100%;padding-inline-start:1.9rem;white-space:normal}
+  .bar{gap:.45rem}
+  .bar .btn{flex:1 1 auto;text-align:center}
+}
+@media(max-width:560px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
+  .stat{padding:.9rem}
+  .stat b{font-size:1.55rem}
+  .steps,.rules{grid-template-columns:1fr}
+  .drop{padding:1.1rem .8rem}
+  .code{padding:.85rem 3rem .85rem .85rem}
+  #toast{bottom:max(1rem,env(safe-area-inset-bottom));left:max(.75rem,env(safe-area-inset-left));right:max(.75rem,env(safe-area-inset-right));width:auto;transform:translateY(30px)}
+  #toast.on{transform:translateY(0)}
+  .brand{padding:1rem}
+  .up,.out{margin-inline:.85rem}
+  .lang{margin-inline:.85rem}
+  .sw{margin-inline:.85rem}
+}
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr}
+  .hero img,.ring img{width:44px;height:44px}
+  .tab{max-width:min(140px,48vw);padding:.5rem .6rem;font-size:.85rem}
+  dialog{width:calc(100vw - 1rem);border-radius:14px}
+}
+@media(min-width:1400px){
+  aside{width:310px}
+  .body{max-width:1120px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(hover:none){
+  .brand:hover img,.up:hover,.row:hover,.step:hover,button.stat:hover{transform:none}
+  .item:hover{padding-inline-start:.7rem}
+}
+</style>
+</head>
+<body class="locked">
+<div id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <form class="card" id="gateForm" autocomplete="off">
+    <div class="glang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" class="on">English</button>
+      <button type="button" data-lang="ar">العربية</button>
+    </div>
+    <div class="head"><img src="assets/logo.jpg" alt=""><b id="gateTitle">Docs Hub</b><p id="gateSub">Enter the access password</p></div>
+    <label id="lblPw">Password<input id="pw" type="password" name="password" autocomplete="current-password" required autofocus></label>
+    <div class="err" id="gateErr" aria-live="polite"></div>
+    <button class="go" id="gateGo" type="submit">Unlock</button>
+  </form>
+</div>
+<div id="splash" class="hold"><div class="in"><img src="assets/logo.jpg" alt=""><b>Docs Hub</b><small id="splashBy">by dev-al7osam</small><div class="ld"></div></div></div>
+<div class="scrim" id="scrim"></div>
+<aside>
+  <button class="brand" id="home"><img src="assets/logo.jpg" alt=""><span><b>Docs Hub</b><small id="brandBy">by dev-al7osam</small></span></button>
+  <div class="lang" role="group" aria-label="Language">
+    <button type="button" data-lang="en" class="on">English</button>
+    <button type="button" data-lang="ar">العربية</button>
+  </div>
+  <div class="sw"><input id="q" type="search" placeholder="Filter by name…" aria-label="Filter docs" autocomplete="off"><kbd>/</kbd></div>
+  <nav id="nav"></nav>
+  <button class="up" id="upBtn">+ Upload doc</button>
+  <button class="out" id="logout" type="button">Lock</button>
+  <div class="by" id="builtBy">Built by <b>dev-al7osam</b></div>
+</aside>
+<main>
+  <div class="top"><button id="burger" aria-label="Menu">☰</button><b>Docs Hub</b></div>
+  <div id="tabs"></div><div id="view"></div>
+</main>
+
+<dialog id="dlg">
+  <h3 id="dlgTitle">Upload doc</h3>
+  <label class="drop" id="drop"><input id="f" type="file" accept=".html,.htm"><span id="dropHint">Drop your .html file here</span><b id="fn">or click to browse</b></label>
+  <label id="lblName">Name<input id="n" placeholder="Defaults to file name"></label>
+  <label id="lblAuthor">Created by<span class="req">*</span><input id="author" placeholder="Your name" required></label>
+  <label id="lblCat">Category<select id="c"><option value="backend">Backend</option><option value="frontend">Frontend</option><option value="third-party">Third party</option></select></label>
+  <div class="acts"><button class="btn" id="cancel">Cancel</button><button class="btn p" id="save">Upload</button></div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let repo=[],local=[],tabs=[],cur="home",shut={},ready=false,lang=localStorage.getItem("docs-hub-lang")||"en";
+
+const I18N={
+en:{
+  brandBy:"by dev-al7osam",builtBy:"Built by <b>dev-al7osam</b>",splashBy:"by dev-al7osam",
+  filter:"Filter by name…",filterAria:"Filter docs",upload:"+ Upload doc",
+  backend:"Backend",frontend:"Frontend","third-party":"Third party",
+  home:"Home",close:"Close",menu:"Menu",
+  noMatch:"No match",nothingYet:"Nothing yet",
+  loading:"Loading…",docsLabel:"Documentation",
+  live:n=>`Live · ${n} docs`,
+  heroTitle:"One place for every doc.",heroLead:"Your team's ",
+  totalDocs:"Total docs",versioned:"Versioned copies",
+  howTitle:"How it works",
+  step1t:"Pick a category",step1d:"Backend, Frontend or Third party. Each has its own folder under <b>docs/</b>.",
+  step2t:"Add your HTML",step2d:"Drop the file in its folder, or use <b>Upload doc</b> in the sidebar.",
+  step3t:"Push to main",step3d:"GitHub Actions rebuilds the index and publishes the site automatically.",
+  step4t:"Find and share",step4d:"Press <b>/</b> to filter, open docs in tabs, and download any of them.",
+  knowTitle:"Good to know",
+  rule1:"Same name in the same category gets <code>v1</code>, then <code>v2</code>, and so on.",
+  rule2:"The file name becomes the doc name. Dashes and underscores turn into spaces.",
+  rule3:"Only <code>.html</code> files. They open in a sandbox, so scripts inside them can't touch the hub.",
+  rule4:"<b>Upload doc</b> saves in this browser only. Download it and commit it to share with the team.",
+  recentTitle:"Recently added",noDocs:"<b>No docs yet</b><br>Upload an .html file or add one under <code>docs/</code>.",
+  codeCm1:"# 1. add the file",codeCm2:"# 2. publish",copy:"Copy",
+  cmdCopied:"Command copied",copyFailed:"Copy failed",
+  dlgTitle:"Upload doc",dropHint:"Drop your .html file here",browse:"or click to browse",
+  name:"Name",namePh:"Defaults to file name",
+  createdBy:"Created by",createdByPh:"Your name",category:"Category",
+  cancel:"Cancel",save:"Upload",
+  needFile:"Choose an .html file first",needAuthor:"Created by is required",
+  uploaded:n=>`Uploaded as “${n}”`,
+  download:"Download",delete:"Delete",
+  dlStart:"Download started",dlFail:"Download failed",
+  delConfirm:"Delete this doc from this browser?",deleted:"Deleted",
+  by:"by",logout:"Lock",
+  gateSub:"Enter the access password",password:"Password",unlock:"Unlock",
+  badPass:"Wrong password",waitLock:s=>`Too many attempts. Wait ${s}s`,
+  words:["backend docs","frontend guides","third-party notes","every version, organised"]
+},
+ar:{
+  brandBy:"بواسطة dev-al7osam",builtBy:"بُني بواسطة <b>dev-al7osam</b>",splashBy:"بواسطة dev-al7osam",
+  filter:"تصفية بالاسم…",filterAria:"تصفية المستندات",upload:"+ رفع مستند",
+  backend:"Backend",frontend:"Frontend","third-party":"طرف ثالث",
+  home:"الرئيسية",close:"إغلاق",menu:"القائمة",
+  noMatch:"لا توجد نتائج",nothingYet:"لا شيء بعد",
+  loading:"جارٍ التحميل…",docsLabel:"التوثيق",
+  live:n=>`مباشر · ${n} مستند`,
+  heroTitle:"مكان واحد لكل مستند.",heroLead:"مستندات فريقك: ",
+  totalDocs:"إجمالي المستندات",versioned:"نسخ بإصدارات",
+  howTitle:"كيف يعمل",
+  step1t:"اختر التصنيف",step1d:"Backend أو Frontend أو طرف ثالث. لكل تصنيف مجلد خاص تحت <b>docs/</b>.",
+  step2t:"أضف ملف HTML",step2d:"ضع الملف في مجلده، أو استخدم <b>رفع مستند</b> من الشريط الجانبي.",
+  step3t:"ادفع إلى main",step3d:"GitHub Actions يعيد بناء الفهرس وينشر الموقع تلقائياً.",
+  step4t:"ابحث وشارك",step4d:"اضغط <b>/</b> للتصفية، وافتح المستندات في تبويبات، وحمّل أي منها.",
+  knowTitle:"معلومات مفيدة",
+  rule1:"نفس الاسم في نفس التصنيف يحصل على <code>v1</code> ثم <code>v2</code> وهكذا.",
+  rule2:"اسم الملف يصبح اسم المستند. الشرطات والخطوط السفلية تتحول إلى مسافات.",
+  rule3:"ملفات <code>.html</code> فقط. تُفتح في بيئة معزولة فلا تمس السكربتات الموقع.",
+  rule4:"<b>رفع مستند</b> يحفظ في هذا المتصفح فقط. حمّله ثم أضفه للمستودع لمشاركته مع الفريق.",
+  recentTitle:"أُضيف حديثاً",noDocs:"<b>لا مستندات بعد</b><br>ارفع ملف .html أو أضفه تحت <code>docs/</code>.",
+  codeCm1:"# 1. أضف الملف",codeCm2:"# 2. انشر",copy:"نسخ",
+  cmdCopied:"تم نسخ الأمر",copyFailed:"فشل النسخ",
+  dlgTitle:"رفع مستند",dropHint:"اسحب ملف .html هنا",browse:"أو انقر للاختيار",
+  name:"الاسم",namePh:"الافتراضي اسم الملف",
+  createdBy:"أُنشئ بواسطة",createdByPh:"اسمك",category:"التصنيف",
+  cancel:"إلغاء",save:"رفع",
+  needFile:"اختر ملف .html أولاً",needAuthor:"حقل «أُنشئ بواسطة» إلزامي",
+  uploaded:n=>`تم الرفع باسم «${n}»`,
+  download:"تحميل",delete:"حذف",
+  dlStart:"بدأ التحميل",dlFail:"فشل التحميل",
+  delConfirm:"حذف هذا المستند من هذا المتصفح؟",deleted:"تم الحذف",
+  by:"بواسطة",logout:"قفل",
+  gateSub:"أدخل كلمة مرور الدخول",password:"كلمة المرور",unlock:"فتح",
+  badPass:"كلمة المرور غير صحيحة",waitLock:s=>`محاولات كثيرة. انتظر ${s}ث`,
+  words:["مستندات Backend","أدلة Frontend","ملاحظات الطرف الثالث","كل إصدار، منظّم"]
+}
+};
+/* Password gate: only PBKDF2 hash is stored (never the plaintext).
+   Change password: node scripts/hash-password.mjs "YourNewPassword" then paste salt/hash below. */
+const AUTH={salt:"6064397b433e18ceea8fb81b405cec93",hash:"06fa93576df7d820d51e1c0d84b6c3323d39bcceee68c6e5c7a7f1f22decd3e2",iters:120000};
+const SKEY="docs-hub-auth-v1",FKEY="docs-hub-fails-v1";
+const t=k=>{const v=I18N[lang][k];return typeof v==="function"?v:v};
+const cats=()=>({backend:t("backend"),frontend:t("frontend"),"third-party":t("third-party")});
+
+const P={
+backend:'<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+frontend:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 9v11"/>',
+"third-party":'<path d="M9 3v4M15 3v4M6 7h12v4a6 6 0 01-12 0zM12 17v4"/>',
+total:'<path d="M4 5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+ver:'<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 4-6 2-11 5"/>',
+folder:'<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',
+upload:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/>',
+git:'<circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 7.2v9.6M8.2 5c5 0 9.8 1 9.8 4.8"/>',
+search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/>',
+book:'<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 21V5M9 8h6"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+bolt:'<path d="M13 3L5 13h6l-1 8 8-10h-6z"/>',
+copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'};
+const ic=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${P[k]}</svg>`;
+const g=k=>`style="--g:var(--c-${k})"`;
+
+const db=new Promise((ok,no)=>{const r=indexedDB.open("docs-hub",1);r.onupgradeneeded=()=>r.result.createObjectStore("docs",{keyPath:"id"});r.onsuccess=()=>ok(r.result);r.onerror=no});
+const tx=async(m,f)=>{const d=await db;return new Promise((ok,no)=>{const r=f(d.transaction("docs",m).objectStore("docs"));r.onsuccess=()=>ok(r.result);r.onerror=no})};
+const all=()=>[...repo,...local],find=id=>all().find(d=>d.id===id);
+const versioned=(name,cat)=>{const n=all().filter(d=>d.cat===cat&&d.base===name).length;return n?`${name} v${n}`:name};
+const locale=()=>lang==="ar"?"ar":"en";
+const fmtDate=d=>new Date(d).toLocaleDateString(locale());
+
+function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),2600)}
+function countUp(el,to){const d=600,s=performance.now();(function f(n){const p=Math.min((n-s)/d,1);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s)}
+const mark=(name,q)=>{const e=esc(name);if(!q)return e;const i=name.toLowerCase().indexOf(q);return i<0?e:esc(name.slice(0,i))+"<mark>"+esc(name.slice(i,i+q.length))+"</mark>"+esc(name.slice(i+q.length))};
+
+function applyChrome(){
+  document.documentElement.lang=lang;
+  document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  $("#splashBy").textContent=t("splashBy");
+  $("#brandBy").textContent=t("brandBy");
+  $("#builtBy").innerHTML=t("builtBy");
+  $("#q").placeholder=t("filter");
+  $("#q").setAttribute("aria-label",t("filterAria"));
+  $("#upBtn").textContent=t("upload");
+  $("#logout").textContent=t("logout");
+  $("#burger").setAttribute("aria-label",t("menu"));
+  document.querySelectorAll("[data-lang]").forEach(b=>b.classList.toggle("on",b.dataset.lang===lang));
+  $("#gateSub").textContent=t("gateSub");
+  $("#lblPw").childNodes[0].textContent=t("password");
+  $("#gateGo").textContent=t("unlock");
+  $("#dlgTitle").textContent=t("dlgTitle");
+  $("#dropHint").textContent=t("dropHint");
+  if(!$("#f").files[0])$("#fn").textContent=t("browse");
+  $("#lblName").firstChild.textContent=t("name");
+  $("#n").placeholder=t("namePh");
+  $("#lblAuthor").childNodes[0].textContent=t("createdBy");
+  $("#author").placeholder=t("createdByPh");
+  $("#lblCat").firstChild.textContent=t("category");
+  const C=cats(),prevCat=$("#c").value;
+  $("#c").innerHTML=`<option value="backend">${C.backend}</option><option value="frontend">${C.frontend}</option><option value="third-party">${C["third-party"]}</option>`;
+  $("#c").value=prevCat||"backend";
+  $("#cancel").textContent=t("cancel");
+  $("#save").textContent=t("save");
+}
+
+function setLang(next){
+  if(next===lang)return;
+  lang=next;localStorage.setItem("docs-hub-lang",lang);
+  applyChrome();
+  if(document.body.classList.contains("locked"))return;
+  nav();tabsBar();main();
+}
+
+const hexToBuf=h=>Uint8Array.from(h.match(/.{2}/g).map(x=>parseInt(x,16)));
+const bufToHex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+const safeEq=(a,b)=>{if(typeof a!=="string"||typeof b!=="string"||a.length!==b.length)return false;let x=0;for(let i=0;i<a.length;i++)x|=a.charCodeAt(i)^b.charCodeAt(i);return x===0};
+async function deriveHash(pw){
+  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),{name:"PBKDF2"},false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:hexToBuf(AUTH.salt),iterations:AUTH.iters,hash:"SHA-256"},key,256);
+  return bufToHex(bits);
+}
+function failState(){try{return JSON.parse(sessionStorage.getItem(FKEY)||"{}")}catch{return{}}}
+function saveFails(s){sessionStorage.setItem(FKEY,JSON.stringify(s))}
+function lockRemaining(){const s=failState();if(!s.until)return 0;return Math.max(0,Math.ceil((s.until-Date.now())/1000))}
+function isUnlocked(){return safeEq(sessionStorage.getItem(SKEY)||"",AUTH.hash)}
+function enterApp(){
+  document.body.classList.remove("locked");
+  $("#splash").classList.remove("hold");
+  $("#gate").style.display="none";
+  init();
+}
+function lockApp(){
+  sessionStorage.removeItem(SKEY);
+  repo=[];local=[];tabs=[];cur="home";ready=false;
+  document.body.classList.add("locked");
+  $("#splash").classList.add("hold");$("#splash").classList.remove("off");
+  $("#gate").style.display="";
+  $("#view").innerHTML="";$("#nav").innerHTML="";$("#tabs").innerHTML="";
+  $("#pw").value="";$("#gateErr").textContent="";
+  applyChrome();$("#pw").focus();
+}
+async function tryUnlock(pw){
+  const wait=lockRemaining();
+  if(wait>0){$("#gateErr").textContent=t("waitLock")(wait);return false}
+  $("#gateGo").disabled=true;
+  try{
+    const hash=await deriveHash(pw);
+    if(!safeEq(hash,AUTH.hash)){
+      const s=failState();s.n=(s.n||0)+1;
+      if(s.n>=5){s.until=Date.now()+Math.min(300000,15000*Math.pow(2,s.n-5));s.n=0}
+      saveFails(s);
+      await new Promise(r=>setTimeout(r,450+Math.random()*250));
+      $("#gateErr").textContent=lockRemaining()?t("waitLock")(lockRemaining()):t("badPass");
+      return false;
+    }
+    sessionStorage.setItem(SKEY,AUTH.hash);sessionStorage.removeItem(FKEY);
+    $("#gateErr").textContent="";return true;
+  }finally{$("#gateGo").disabled=false}
+}
+
+async function init(){
+  applyChrome();home();const t0=performance.now();
+  try{repo=(await (await fetch("docs.json",{cache:"no-cache"})).json()).map(d=>({...d,base:d.name.replace(/ v\d+$/,"")}))}catch{repo=[]}
+  try{local=await tx("readonly",s=>s.getAll())}catch{local=[]}
+  await new Promise(r=>setTimeout(r,Math.max(0,700-(performance.now()-t0))));
+  ready=true;nav();tabsBar();main();$("#splash").classList.add("off");
+}
+
+function nav(){
+  const q=$("#q").value.trim().toLowerCase(),arrow='<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+  const C=cats();let hits=0;
+  $("#nav").innerHTML=Object.entries(C).map(([k,label])=>{
+    const items=all().filter(d=>d.cat===k&&d.name.toLowerCase().includes(q));hits+=items.length;
+    const closed=shut[k]&&!q;
+    return `<button class="grp ${closed?"shut":""}" data-g="${k}" ${g(k)}>${ic(k)}${label}<em>${items.length}</em>${arrow}</button>
+    <div class="items ${closed?"shut":""}"><div>${items.map(d=>`<button class="item ${cur===d.id?"on":""}" data-id="${esc(d.id)}" ${g(k)} title="${esc(d.name)}${d.createdBy?" · "+esc(d.createdBy):""}">${mark(d.name,q)}</button>`).join("")||`<div class="none">${q?t("noMatch"):t("nothingYet")}</div>`}</div></div>`}).join("");
+}
+function tabsBar(){
+  $("#tabs").innerHTML=[{id:"home",name:t("home")},...tabs.map(find).filter(Boolean)].map(x=>
+    `<button class="tab ${cur===x.id?"on":""}" data-id="${esc(x.id)}">${esc(x.name)}${x.id!=="home"?`<s data-x="${esc(x.id)}" title="${t("close")}">×</s>`:""}</button>`).join("");
+  $("#tabs").querySelector(".on")?.scrollIntoView({inline:"nearest",block:"nearest"});
+}
+function main(){const d=find(cur);d?docView(d):home()}
+
+function home(){
+  cur="home";const d=all(),C=cats();
+  if(!ready){$("#view").innerHTML=`<div class="hero"><img src="assets/logo.jpg" alt=""><h1>${t("docsLabel")}</h1><p>${t("loading")}</p></div><div class="body"><div class="stats">${'<div class="sk" style="height:96px"></div>'.repeat(5)}</div></div>`;return}
+  const latest=[...d].sort((a,b)=>new Date(b.added)-new Date(a.added)).slice(0,5);
+  const st=(n,l,i,k,icon)=>{const tag=k?"button":"div";return `<${tag} class="stat" style="--i:${i};${k?`--g:var(--c-${k})`:""}" ${k?`data-cat="${k}"`:""}><div class="top-i">${ic(icon)}</div><b data-n="${n}">0</b><span>${l}</span></${tag}>`};
+  const step=(i,icon,title,txt)=>`<div class="step" style="--i:${i}"><span class="n">${i+1}</span>${ic(icon)}<b>${title}</b><p>${txt}</p></div>`;
+  const rule=(i,icon,txt,w)=>`<div class="rule ${w?"warn":""}" style="--i:${i}">${ic(icon)}<div>${txt}</div></div>`;
+  $("#view").innerHTML=`<div class="enter"><div class="hero">
+    <div class="fl" style="width:46px;inset-inline-end:9%;top:22%">${ic("backend")}</div><div class="fl" style="width:34px;inset-inline-end:22%;bottom:24%;animation-delay:-2s">${ic("frontend")}</div><div class="fl" style="width:40px;inset-inline-end:3%;bottom:14%;animation-delay:-4s">${ic("third-party")}</div>
+    <span class="ring"><img src="assets/logo.jpg" alt=""></span><span class="live"><i></i>${t("live")(d.length)}</span>
+    <h1>${t("heroTitle")}</h1><p>${t("heroLead")}<span class="typer" id="typer"></span></p></div>
+  <div class="body"><div class="stats">${st(d.length,t("totalDocs"),0,"","total")}${Object.entries(C).map(([k,l],i)=>st(d.filter(x=>x.cat===k).length,l,i+1,k,k)).join("")}${st(d.filter(x=>/ v\d+$/.test(x.name)).length,t("versioned"),4,"","ver")}</div>
+  <h2>${ic("book")}${t("howTitle")}</h2>
+  <div class="steps">${step(0,"folder",t("step1t"),t("step1d"))}${step(1,"upload",t("step2t"),t("step2d"))}${step(2,"git",t("step3t"),t("step3d"))}${step(3,"search",t("step4t"),t("step4d"))}</div>
+  <div class="code" id="code"><span class="cm">${t("codeCm1")}</span>
+docs/backend/<b>my-doc.html</b>
+<span class="cm">${t("codeCm2")}</span>
+git add . && git commit -m "add doc" && git push<button id="cp" title="${t("copy")}">${ic("copy")}</button></div>
+  <h2>${ic("info")}${t("knowTitle")}</h2>
+  <div class="rules">${rule(0,"check",t("rule1"))}${rule(1,"check",t("rule2"))}${rule(2,"bolt",t("rule3"))}${rule(3,"info",t("rule4"),1)}</div>
+  <h2>${ic("clock")}${t("recentTitle")}</h2>${latest.length?latest.map((x,i)=>`<button class="row" style="--i:${i};--g:var(--c-${x.cat})" data-id="${esc(x.id)}"><span><i class="dot" style="color:var(--g)">${ic(x.cat)}</i>${esc(x.name)}${x.createdBy?`<small style="margin-inline-start:.4rem;opacity:.75">· ${esc(x.createdBy)}</small>`:""}</span><small>${C[x.cat]} · ${fmtDate(x.added)}</small></button>`).join(""):`<div class="empty">${t("noDocs")}</div>`}</div></div>`;
+  typer($("#typer"));
+  $("#cp").onclick=()=>{navigator.clipboard?.writeText('git add . && git commit -m "add doc" && git push').then(()=>toast(t("cmdCopied")),()=>toast(t("copyFailed")))};
+  document.querySelectorAll("[data-n]").forEach(el=>countUp(el,+el.dataset.n));
+}
+
+function typer(el){
+  const W=I18N[lang].words;let w=0,c=0,del=false;
+  (function tick(){
+    if(!el||!document.body.contains(el))return;
+    const word=W[w];c+=del?-1:1;el.textContent=word.slice(0,c);
+    let ms=del?35:70;
+    if(!del&&c===word.length){del=true;ms=1400}else if(del&&c===0){del=false;w=(w+1)%W.length;ms=300}
+    setTimeout(tick,ms);
+  })();
+}
+document.addEventListener("pointermove",e=>{const el=e.target.closest?.(".stat,.step,.rule,.row");if(!el)return;const r=el.getBoundingClientRect();el.style.setProperty("--mx",e.clientX-r.left+"px");el.style.setProperty("--my",e.clientY-r.top+"px")});
+
+function docView(d){
+  const C=cats();
+  const author=d.createdBy?`<span class="author"><em>${t("by")}</em> ${esc(d.createdBy)}</span>`:"";
+  $("#view").innerHTML=`<div class="doc enter"><div class="bar"><div class="meta"><span>${C[d.cat]} / ${esc(d.name)}</span>${author}</div><button class="btn" id="dl">${t("download")}</button>${d.local?`<button class="btn d" id="rm">${t("delete")}</button>`:""}</div><div class="fw"><div class="spin"><i></i></div><iframe sandbox="allow-scripts allow-popups" title="${esc(d.name)}"></iframe></div></div>`;
+  const fr=$("iframe");fr.onload=()=>{fr.classList.add("ok");$(".spin").style.opacity=0};
+  d.local?fr.srcdoc=d.html:fr.src=d.url;
+  $("#dl").onclick=async()=>{
+    try{const html=d.local?d.html:await (await fetch(d.url)).text();
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=d.name.replace(/\s+/g,"-")+".html";a.click();URL.revokeObjectURL(a.href);toast(t("dlStart"))}catch{toast(t("dlFail"))}
+  };
+  if(d.local)$("#rm").onclick=async()=>{if(!confirm(t("delConfirm")))return;await tx("readwrite",s=>s.delete(d.id));local=local.filter(x=>x.id!==d.id);closeTab(d.id);toast(t("deleted"))};
+}
+
+function go(id){cur=id;if(id!=="home"&&!tabs.includes(id))tabs.push(id);document.body.classList.remove("menu");nav();tabsBar();main()}
+function closeTab(id){tabs=tabs.filter(x=>x!==id);if(cur===id)cur=tabs.at(-1)||"home";nav();tabsBar();main()}
+
+document.addEventListener("click",e=>{
+  const langBtn=e.target.closest("[data-lang]");if(langBtn)return setLang(langBtn.dataset.lang);
+  const x=e.target.closest("[data-x]");if(x){e.stopPropagation();return closeTab(x.dataset.x)}
+  const gr=e.target.closest("[data-g]");if(gr){shut[gr.dataset.g]=!shut[gr.dataset.g];return nav()}
+  const c=e.target.closest("[data-cat]");if(c){shut={backend:1,frontend:1,"third-party":1};shut[c.dataset.cat]=0;document.body.classList.add("menu");return nav()}
+  const item=e.target.closest("[data-id]");if(item)go(item.dataset.id);
+});
+$("#home").onclick=()=>go("home");
+$("#q").oninput=nav;
+$("#burger").onclick=()=>document.body.classList.add("menu");
+$("#scrim").onclick=()=>document.body.classList.remove("menu");
+window.addEventListener("resize",()=>{if(window.matchMedia("(min-width:901px)").matches)document.body.classList.remove("menu")});
+document.addEventListener("keydown",e=>{
+  if(e.key==="/"&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();document.body.classList.add("menu");$("#q").focus()}
+  if(e.key==="Escape"){$("#q").value="";nav();document.body.classList.remove("menu")}
+});
+$("#upBtn").onclick=()=>{$("#dlg").showModal()};
+$("#cancel").onclick=()=>$("#dlg").close();
+const pick=f=>{if(!f)return;const dt=new DataTransfer();dt.items.add(f);$("#f").files=dt.files;$("#fn").textContent=f.name};
+$("#f").onchange=e=>pick(e.target.files[0]);
+["dragover","dragenter"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.add("over")}));
+["dragleave","drop"].forEach(ev=>$("#drop").addEventListener(ev,e=>{e.preventDefault();$("#drop").classList.remove("over");if(ev==="drop")pick(e.dataTransfer.files[0])}));
+$("#save").onclick=async()=>{
+  const file=$("#f").files[0];if(!file)return toast(t("needFile"));
+  const createdBy=$("#author").value.trim();if(!createdBy)return toast(t("needAuthor"));
+  const cat=$("#c").value,base=$("#n").value.trim()||file.name.replace(/\.html?$/i,"").replace(/[-_]+/g," ");
+  const doc={id:"local/"+Date.now(),base,name:versioned(base,cat),cat,createdBy,html:await file.text(),added:new Date().toISOString(),local:true};
+  await tx("readwrite",s=>s.put(doc));local.push(doc);
+  $("#dlg").close();$("#f").value="";$("#n").value="";$("#author").value="";$("#fn").textContent=t("browse");go(doc.id);toast(t("uploaded")(doc.name));
+};
+$("#gateForm").onsubmit=async e=>{
+  e.preventDefault();
+  const ok=await tryUnlock($("#pw").value);
+  $("#pw").value="";
+  if(ok)enterApp();
+};
+$("#logout").onclick=()=>lockApp();
+applyChrome();
+if(isUnlocked())enterApp();
+else{$("#pw").focus()}
+</script>
+</body>
+</html>
