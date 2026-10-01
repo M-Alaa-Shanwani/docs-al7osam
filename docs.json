@@ -7,5 +7,14 @@
     "added": "2026-09-30T17:11:57.383Z",
     "createdBy": "3",
     "base": "513547"
+  },
+  {
+    "id": "backend/storedprosedger-1790846513784.html",
+    "name": "storedProsedger",
+    "cat": "backend",
+    "url": "docs/backend/storedprosedger-1790846513784.html",
+    "added": "2026-10-01T09:21:55.727Z",
+    "createdBy": "Elshanawani",
+    "base": "storedProsedger"
   }
 ]
